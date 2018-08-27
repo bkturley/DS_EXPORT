@@ -1,3 +1,14 @@
+# build artifacts
+target/
+
+# eclipse project file
+.settings/
+.classpath
+.project
+
+# IntelliJ project files
 *.iml
 .idea/
-target/
+
+# macOS
+.DS_Store
