@@ -28,7 +28,11 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+
 public class ExcelWorkbook {
+
+    Configuration configuration = new Configuration();
+
     private static List<Line> lines;
     private static int lineCount;
 
@@ -64,7 +68,7 @@ public class ExcelWorkbook {
     private File file;
 
     ExcelWorkbook(String jsonName, String fileName) {
-        File textFile = new File("mail/"  + fileName.trim());
+        File textFile = new File(configuration.getProperty("workingDirectory") + fileName.trim() + ".txt");
 
 
         FileReader fileReader;
@@ -371,7 +375,7 @@ public class ExcelWorkbook {
             String xlsxFile = (fileName.trim().substring(0, fileName.indexOf(".")) + ".xlsx");
 
             try {
-                FileOutputStream newXLSXfile = new FileOutputStream("mail/" + xlsxFile.trim());
+                FileOutputStream newXLSXfile = new FileOutputStream(configuration.getProperty("workingDirectory") + xlsxFile.trim());
 
                 workBook.write(newXLSXfile);
 
@@ -379,9 +383,7 @@ public class ExcelWorkbook {
 
                 workBook.close();
 
-                file = new File("mail/" + xlsxFile.trim());
-
-                //file.delete();
+                file = new File(configuration.getProperty("workingDirectory") + xlsxFile.trim());
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -393,8 +395,8 @@ public class ExcelWorkbook {
         return file.getName();
     }
 
-    private static Report getReportSection(String jsonName, String matchToName) {
-        File jsonFile = new File("jsonReporting/" + jsonName.trim() + ".json");
+    private Report getReportSection(String jsonName, String matchToName) {
+        File jsonFile = new File(configuration.getProperty("jsonMaps") + jsonName.trim() + ".json");
 
         Report thisReport = new Report();
 
