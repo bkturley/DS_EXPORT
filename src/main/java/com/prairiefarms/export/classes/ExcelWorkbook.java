@@ -1,8 +1,7 @@
-package com.prairiefarms.export;
+package com.prairiefarms.export.classes;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -67,7 +66,7 @@ public class ExcelWorkbook {
 
     private File file;
 
-    ExcelWorkbook(String jsonName, String fileName) {
+    ExcelWorkbook(String jsonName, String fileName) throws IOException {
         File textFile = new File(configuration.getProperty("workingDirectory") + fileName.trim() + ".txt");
 
 
@@ -78,166 +77,160 @@ public class ExcelWorkbook {
         String thisLine;
 
         Line line;
-        try {
-            fileReader = new FileReader(textFile);
+        fileReader = new FileReader(textFile);
 
-            bufferedReader = new BufferedReader(fileReader);
+        bufferedReader = new BufferedReader(fileReader);
 
-            lines = new LinkedList<>();
+        lines = new LinkedList<>();
 
-            lineCount = 0;
+        lineCount = 0;
 
-            reportSection = new Report();
+        reportSection = new Report();
 
-            reportSection = getReportSection(jsonName, fileName);
+        reportSection = getReportSection(jsonName, fileName);
 
-            List<Exception> exceptions = new LinkedList<>();
+        List<Exception> exceptions = new LinkedList<>();
 
-            try {
-                while ((thisLine = bufferedReader.readLine()) != null) {
-                    line = new Line();
+        while ((thisLine = bufferedReader.readLine()) != null) {
+            line = new Line();
 
-                    line.setType(" ");
-                    line.setPrecision(0);
-                    line.setElement(0);
-                    line.setLine(thisLine);
+            line.setType(" ");
+            line.setPrecision(0);
+            line.setElement(0);
+            line.setLine(thisLine);
 
-                    Exception exception;
-                    if (lineCount < reportSection.getSection().size()
-                            && (!reportSection.getSection().get(lineCount).getName().equals("customer")
-                            && !reportSection.getSection().get(lineCount).getName().equals("product")
-                            && !reportSection.getSection().get(lineCount).getName().equals("detail")
-                            && !reportSection.getSection().get(lineCount).getName().equals("footer"))) {
-                        line.setType(reportSection.getSection().get(lineCount).getName());
-                        line.setElement(lineCount);
+            Exception exception;
+            if (lineCount < reportSection.getSection().size()
+                    && (!reportSection.getSection().get(lineCount).getName().equals("customer")
+                    && !reportSection.getSection().get(lineCount).getName().equals("product")
+                    && !reportSection.getSection().get(lineCount).getName().equals("detail")
+                    && !reportSection.getSection().get(lineCount).getName().equals("footer"))) {
+                line.setType(reportSection.getSection().get(lineCount).getName());
+                line.setElement(lineCount);
 
-                        switch (reportSection.getSection().get(lineCount).getName().trim()) {
-                            case "header":
-                                exception = new Exception();
+                switch (reportSection.getSection().get(lineCount).getName().trim()) {
+                    case "header":
+                        exception = new Exception();
 
-                                exception.setType("header");
-                                exception.setRepeatable(reportSection.getSection().get(lineCount).isRepeatable());
-                                exception.setElement(lineCount);
+                        exception.setType("header");
+                        exception.setRepeatable(reportSection.getSection().get(lineCount).isRepeatable());
+                        exception.setElement(lineCount);
 
-                                if (thisLine.trim().contains("PAGE")) {
-                                    exception.setLine(line.getLine().substring(0, line.getLine().trim().indexOf("PAGE")));
+                        if (thisLine.trim().contains("PAGE")) {
+                            exception.setLine(line.getLine().substring(0, line.getLine().trim().indexOf("PAGE")));
 
-                                } else {
-                                    exception.setLine(line.getLine());
-                                }
-
-                                exceptions.add(exception);
-
-                                break;
-
-                            case "label":
-                                exception = new Exception();
-
-                                exception.setType("label");
-                                exception.setRepeatable(reportSection.getSection().get(lineCount).isRepeatable());
-                                exception.setElement(lineCount);
-                                exception.setLine(thisLine);
-
-                                exceptions.add(exception);
-
-                                break;
+                        } else {
+                            exception.setLine(line.getLine());
                         }
 
-                    } else {
-                        for (int y = 0; y < reportSection.getSection().size(); y++) {
-                            ReportRow section;
+                        exceptions.add(exception);
 
-                            section = reportSection.getSection().get(y);
+                        break;
 
-                            if (line.getLine().trim().contains("TOTALS:") && section.getName().trim().equals("footer")) {
-                                line.setType("footer");
+                    case "label":
+                        exception = new Exception();
 
-                                if (section.getIdentifier() != null) {
-                                    if (line.getLine().trim().contains(section.getIdentifier())) {
-                                        line.setElement(y);
+                        exception.setType("label");
+                        exception.setRepeatable(reportSection.getSection().get(lineCount).isRepeatable());
+                        exception.setElement(lineCount);
+                        exception.setLine(thisLine);
 
-                                        break;
-                                    }
+                        exceptions.add(exception);
 
-                                } else {
-                                    line.setElement(y);
+                        break;
+                }
 
-                                    break;
-                                }
-                            }
+            } else {
+                for (int y = 0; y < reportSection.getSection().size(); y++) {
+                    ReportRow section;
 
-                            if (line.getLine().trim().contains("CUSTOMER:") && section.getName().trim().equals("customer")) {
-                                line.setType("customer");
+                    section = reportSection.getSection().get(y);
 
+                    if (line.getLine().trim().contains("TOTALS:") && section.getName().trim().equals("footer")) {
+                        line.setType("footer");
+
+                        if (section.getIdentifier() != null) {
+                            if (line.getLine().trim().contains(section.getIdentifier())) {
                                 line.setElement(y);
 
                                 break;
                             }
 
-                            if (line.getLine().trim().contains("PRODUCT:") && section.getName().trim().equals("product")) {
-                                line.setType("product");
+                        } else {
+                            line.setElement(y);
 
-                                line.setElement(y);
-
-                                break;
-                            }
-                        }
-
-                        if (line.getType().trim().equals("")) {
-                            for (Exception exception1 : exceptions) {
-
-                                exception = exception1;
-
-                                if (line.getLine().contains(exception.getLine())) {
-                                    if (exception.isRepeatable()) {
-                                        line.setType(exception.getType());
-                                        line.setElement(exception.getElement());
-
-                                    } else {
-                                        line.setType("SKIP");
-                                    }
-
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (line.getType().trim().equals("")) {
-                            line.setType("detail");
-
-                            for (int y = 0; y < reportSection.getSection().size(); y++) {
-                                if (reportSection.getSection().get(y).getName().trim().equals(line.getType().trim())) {
-                                    line.setElement(y);
-
-                                    break;
-                                }
-                            }
+                            break;
                         }
                     }
 
-                    if (!line.getType().trim().equals("")) {
-                        lines.add(line);
+                    if (line.getLine().trim().contains("CUSTOMER:") && section.getName().trim().equals("customer")) {
+                        line.setType("customer");
 
-                        lineCount++;
+                        line.setElement(y);
+
+                        break;
+                    }
+
+                    if (line.getLine().trim().contains("PRODUCT:") && section.getName().trim().equals("product")) {
+                        line.setType("product");
+
+                        line.setElement(y);
+
+                        break;
                     }
                 }
 
-                fileReader.close();
+                if (line.getType().trim().equals("")) {
+                    for (Exception exception1 : exceptions) {
 
-            } catch (IOException e) {
-                e.printStackTrace();
+                        exception = exception1;
+
+                        if (line.getLine().contains(exception.getLine())) {
+                            if (exception.isRepeatable()) {
+                                line.setType(exception.getType());
+                                line.setElement(exception.getElement());
+
+                            } else {
+                                line.setType("SKIP");
+                            }
+
+                            break;
+                        }
+                    }
+                }
+
+                if (line.getType().trim().equals("")) {
+                    line.setType("detail");
+
+                    for (int y = 0; y < reportSection.getSection().size(); y++) {
+                        if (reportSection.getSection().get(y).getName().trim().equals(line.getType().trim())) {
+                            line.setElement(y);
+
+                            break;
+                        }
+                    }
+                }
             }
 
-            if (!textFile.delete()){
-                throw new FileNotFoundException(textFile.getName() + "not found while attempting delete");
-            }
+            if (!line.getType().trim().equals("")) {
+                lines.add(line);
 
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+                lineCount++;
+            }
         }
 
+        fileReader.close();
+
+
+
+//        if (!textFile.delete()){
+//            throw new FileNotFoundException(textFile.getName() + "not found while attempting delete");
+//        }
+
+
+
         if (!lines.isEmpty()) {
-            textFile.delete();
+//            textFile.delete();
 
             autoSizeColumns = 0;
 
@@ -372,22 +365,18 @@ public class ExcelWorkbook {
 
             for(short resizeColumn = 0; resizeColumn < autoSizeColumns; resizeColumn++) sheet.autoSizeColumn(resizeColumn);
 
-            String xlsxFile = (fileName.trim().substring(0, fileName.indexOf(".")) + ".xlsx");
+            String xlsxFile = fileName + ".xlsx";
 
-            try {
-                FileOutputStream newXLSXfile = new FileOutputStream(configuration.getProperty("workingDirectory") + xlsxFile.trim());
+            FileOutputStream newXLSXfile = new FileOutputStream(configuration.getProperty("workingDirectory") + xlsxFile.trim());
 
-                workBook.write(newXLSXfile);
+            workBook.write(newXLSXfile);
 
-                newXLSXfile.close();
+            newXLSXfile.close();
 
-                workBook.close();
+            workBook.close();
 
-                file = new File(configuration.getProperty("workingDirectory") + xlsxFile.trim());
+            file = new File(configuration.getProperty("workingDirectory") + xlsxFile.trim());
 
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
     }
 
@@ -395,29 +384,26 @@ public class ExcelWorkbook {
         return file.getName();
     }
 
-    private Report getReportSection(String jsonName, String matchToName) {
+    private Report getReportSection(String jsonName, String matchToName) throws IOException {
         File jsonFile = new File(configuration.getProperty("jsonMaps") + jsonName.trim() + ".json");
 
-        Report thisReport = new Report();
+        Report thisReport = null;
 
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
+        ObjectMapper objectMapper = new ObjectMapper();
 
-            List<Report> reports = objectMapper.readValue(jsonFile, new TypeReference<List<Report>>() {
-            });
+        List<Report> reports = objectMapper.readValue(jsonFile, new TypeReference<List<Report>>() {
+        });
 
-            for (Report report : reports) {
-                if (matchToName.trim().toLowerCase().contains(report.getTitle().trim().toLowerCase())) {
-                    thisReport = report;
-
-                    break;
-                }
+        for (Report report : reports) {
+            if (matchToName.trim().toLowerCase().contains(report.getTitle().trim().toLowerCase())) {
+                thisReport = report;
+                break;
             }
-
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
+        if(thisReport == null){
+            throw new IOException("Report Conversion layout with title: " + matchToName + " not found in conversion file: " +jsonName);
+        }
         return thisReport;
     }
 

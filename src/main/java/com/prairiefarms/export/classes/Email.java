@@ -1,5 +1,8 @@
-package com.prairiefarms.export;
+package com.prairiefarms.export.classes;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Properties;
@@ -33,7 +36,14 @@ public class Email {
         this.documentName = documentName;
         attachments.add(getTxtFileAttachment(documentName));
         attachments.add(getPdfFileAttachment(documentName));
-        //attachments.add(getXlsxFileAttachment(documentName));
+        try {
+            attachments.add(getXlsxFileAttachment(documentName));
+        }catch (Exception e){
+            StringWriter sw = new StringWriter();
+            e.printStackTrace(new PrintWriter(sw));
+            xlsxError = "Problem converting to Xlsx format. Technical details: <br>" + sw.toString();
+            e.printStackTrace();
+        }
     }
 
 
@@ -121,7 +131,7 @@ public class Email {
         return returnMe;
     }
 
-    private String getXlsxFileAttachment(String fileName){
+    private String getXlsxFileAttachment(String fileName) throws IOException {
         return configuration.getProperty("workingDirectory") + new ExcelWorkbook(fileName, fileName).getFileName();
     }
 }
