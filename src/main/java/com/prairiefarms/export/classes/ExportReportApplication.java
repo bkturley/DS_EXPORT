@@ -11,7 +11,9 @@ public class ExportReportApplication {
         try{
             String reportId = args[0];
             String recipients = args[1];
-            new Email(reportId).send(recipients);
+            String subjectLine = args[2];
+            String messageBodyText = args[3];
+            new Email(reportId).send(recipients, subjectLine, messageBodyText);
         }catch (Exception exception){
             exception.printStackTrace();
         }

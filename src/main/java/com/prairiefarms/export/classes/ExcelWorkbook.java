@@ -28,14 +28,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 
-public class ExcelWorkbook {
+class ExcelWorkbook {
 
-    Configuration configuration = new Configuration();
+    private Configuration configuration = new Configuration();
 
     private static List<Line> lines;
     private static int lineCount;
 
-    private static Report reportSection;
+//    private static Report reportSection;
     private static List<ReportColumn> columns;
 
     private static Sheet sheet;
@@ -69,58 +69,50 @@ public class ExcelWorkbook {
     ExcelWorkbook(String jsonName, String fileName) throws IOException {
         File textFile = new File(configuration.getProperty("workingDirectory") + fileName.trim() + ".txt");
 
+        FileReader fileReader = new FileReader(textFile);
 
-        FileReader fileReader;
-
-        BufferedReader bufferedReader;
-
-        String thisLine;
-
-        Line line;
-        fileReader = new FileReader(textFile);
-
-        bufferedReader = new BufferedReader(fileReader);
+        BufferedReader bufferedReader = new BufferedReader(fileReader);
 
         lines = new LinkedList<>();
 
         lineCount = 0;
 
-        reportSection = new Report();
-
-        reportSection = getReportSection(jsonName, fileName);
+        Report reportSection = getReportSection(jsonName, fileName);
 
         List<Exception> exceptions = new LinkedList<>();
 
-        while ((thisLine = bufferedReader.readLine()) != null) {
-            line = new Line();
+        String nextLine;
+        while ((nextLine = bufferedReader.readLine()) != null) {
 
-            line.setType(" ");
-            line.setPrecision(0);
-            line.setElement(0);
-            line.setLine(thisLine);
+            Line currentLine = new Line();
+            currentLine.setType(" ");
+            currentLine.setPrecision(0);
+            currentLine.setElement(0);
+            currentLine.setLine(nextLine);
 
-            Exception exception;
             if (lineCount < reportSection.getSection().size()
                     && (!reportSection.getSection().get(lineCount).getName().equals("customer")
                     && !reportSection.getSection().get(lineCount).getName().equals("product")
                     && !reportSection.getSection().get(lineCount).getName().equals("detail")
                     && !reportSection.getSection().get(lineCount).getName().equals("footer"))) {
-                line.setType(reportSection.getSection().get(lineCount).getName());
-                line.setElement(lineCount);
+
+                currentLine.setType(reportSection.getSection().get(lineCount).getName());
+                currentLine.setElement(lineCount);
 
                 switch (reportSection.getSection().get(lineCount).getName().trim()) {
+
                     case "header":
-                        exception = new Exception();
+                        Exception exception = new Exception();
 
                         exception.setType("header");
                         exception.setRepeatable(reportSection.getSection().get(lineCount).isRepeatable());
                         exception.setElement(lineCount);
 
-                        if (thisLine.trim().contains("PAGE")) {
-                            exception.setLine(line.getLine().substring(0, line.getLine().trim().indexOf("PAGE")));
+                        if (nextLine.trim().contains("PAGE")) {
+                            exception.setLine(currentLine.getLine().substring(0, currentLine.getLine().trim().indexOf("PAGE")));
 
                         } else {
-                            exception.setLine(line.getLine());
+                            exception.setLine(currentLine.getLine());
                         }
 
                         exceptions.add(exception);
@@ -133,7 +125,7 @@ public class ExcelWorkbook {
                         exception.setType("label");
                         exception.setRepeatable(reportSection.getSection().get(lineCount).isRepeatable());
                         exception.setElement(lineCount);
-                        exception.setLine(thisLine);
+                        exception.setLine(nextLine);
 
                         exceptions.add(exception);
 
@@ -146,52 +138,50 @@ public class ExcelWorkbook {
 
                     section = reportSection.getSection().get(y);
 
-                    if (line.getLine().trim().contains("TOTALS:") && section.getName().trim().equals("footer")) {
-                        line.setType("footer");
+                    if (currentLine.getLine().trim().contains("al Products Listed:") && section.getName().trim().equals("footer")) {
+                        currentLine.setType("footer");
 
                         if (section.getIdentifier() != null) {
-                            if (line.getLine().trim().contains(section.getIdentifier())) {
-                                line.setElement(y);
+                            if (currentLine.getLine().trim().contains(section.getIdentifier())) {
+                                currentLine.setElement(y);
 
                                 break;
                             }
 
                         } else {
-                            line.setElement(y);
+                            currentLine.setElement(y);
 
                             break;
                         }
                     }
 
-                    if (line.getLine().trim().contains("CUSTOMER:") && section.getName().trim().equals("customer")) {
-                        line.setType("customer");
+                    if (currentLine.getLine().trim().contains("CUSTOMER:") && section.getName().trim().equals("customer")) {
+                        currentLine.setType("customer");
 
-                        line.setElement(y);
+                        currentLine.setElement(y);
 
                         break;
                     }
 
-                    if (line.getLine().trim().contains("PRODUCT:") && section.getName().trim().equals("product")) {
-                        line.setType("product");
+                    if (currentLine.getLine().trim().contains("PRODUCT:") && section.getName().trim().equals("product")) {
+                        currentLine.setType("product");
 
-                        line.setElement(y);
+                        currentLine.setElement(y);
 
                         break;
                     }
                 }
 
-                if (line.getType().trim().equals("")) {
-                    for (Exception exception1 : exceptions) {
+                if ("".equals(currentLine.getType().trim())) {
+                    for (Exception exception : exceptions) {
 
-                        exception = exception1;
-
-                        if (line.getLine().contains(exception.getLine())) {
+                        if (currentLine.getLine().contains(exception.getLine())) {
                             if (exception.isRepeatable()) {
-                                line.setType(exception.getType());
-                                line.setElement(exception.getElement());
+                                currentLine.setType(exception.getType());
+                                currentLine.setElement(exception.getElement());
 
                             } else {
-                                line.setType("SKIP");
+                                currentLine.setType("SKIP");
                             }
 
                             break;
@@ -199,12 +189,12 @@ public class ExcelWorkbook {
                     }
                 }
 
-                if (line.getType().trim().equals("")) {
-                    line.setType("detail");
+                if (currentLine.getType().trim().equals("")) {
+                    currentLine.setType("detail");
 
                     for (int y = 0; y < reportSection.getSection().size(); y++) {
-                        if (reportSection.getSection().get(y).getName().trim().equals(line.getType().trim())) {
-                            line.setElement(y);
+                        if (reportSection.getSection().get(y).getName().trim().equals(currentLine.getType().trim())) {
+                            currentLine.setElement(y);
 
                             break;
                         }
@@ -212,8 +202,8 @@ public class ExcelWorkbook {
                 }
             }
 
-            if (!line.getType().trim().equals("")) {
-                lines.add(line);
+            if (!currentLine.getType().trim().equals("")) {
+                lines.add(currentLine);
 
                 lineCount++;
             }
@@ -315,9 +305,7 @@ public class ExcelWorkbook {
 
             lineCount = 0;
 
-            for (Line line1 : lines) {
-
-                line = line1;
+            for (Line line : lines) {
 
                 for (int y = 0; y < reportSection.getSection().size(); y++) {
                     if (reportSection.getSection().get(y).getName().trim().equals(line.getType().trim())
@@ -380,7 +368,7 @@ public class ExcelWorkbook {
         }
     }
 
-    public String getFileName(){
+    String getFileName(){
         return file.getName();
     }
 

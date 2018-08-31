@@ -24,13 +24,13 @@ import javax.mail.internet.MimeMultipart;
 
 
 
-public class Email {
+class Email {
 
-    Configuration configuration = new Configuration();
+    private Configuration configuration = new Configuration();
 
-    String documentName;
-    ArrayList<String> attachments = new ArrayList<>();
-    String xlsxError = "";
+    private String documentName;
+    private ArrayList<String> attachments = new ArrayList<>();
+    private String xlsxError = "";
 
     Email(String documentName){
         this.documentName = documentName;
@@ -48,7 +48,7 @@ public class Email {
 
 
 
-    public void send(String addresses) throws MessagingException {
+    void send(String addresses, String subjectLine, String messageBodyText) throws MessagingException {
         Properties props = new Properties();
 
         props.put("mail.smtp.auth", "true");
@@ -75,15 +75,18 @@ public class Email {
         }
 
         message.addRecipients(Message.RecipientType.CC, InternetAddress.parse(""));
-        message.setSubject(configuration.getProperty("defaultSubjectLine")+ " " + documentName);
+        message.setSubject(subjectLine);
 
         Multipart multipart = new MimeMultipart();
 
         BodyPart messageBodyPart = new MimeBodyPart();
 
         messageBodyPart.setContent(configuration.getProperty("defaultMessageBody")
-                + "<br><br><br>"
+                + "<br><br>"
+                + messageBodyText
+                + "<br><br>"
                 + xlsxError
+                + "<br><br>"
                 + configuration.getProperty("disclaimer"), "text/html");
 
         multipart.addBodyPart(messageBodyPart);
@@ -116,19 +119,15 @@ public class Email {
     }
 
     private String getTxtFileAttachment(String fileName){
-        String returnMe = "";
-        returnMe = configuration.getProperty("workingDirectory")
+        return configuration.getProperty("workingDirectory")
                 + fileName
                 + ".txt";
-        return returnMe;
     }
 
     private String getPdfFileAttachment(String fileName){
-        String returnMe = "";
-        returnMe = configuration.getProperty("workingDirectory")
+        return configuration.getProperty("workingDirectory")
                 + fileName
                 + ".pdf";
-        return returnMe;
     }
 
     private String getXlsxFileAttachment(String fileName) throws IOException {
