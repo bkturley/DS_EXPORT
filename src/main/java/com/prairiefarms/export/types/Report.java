@@ -4,7 +4,7 @@ import java.util.List;
 
 public class Report {
     private String title;
-    private List<ReportRow> section;
+    private List<ReportRow> reportRows;
 
 
     public String getTitle() {
@@ -15,11 +15,11 @@ public class Report {
         this.title = title;
     }
 
-    public List<ReportRow> getSection() {
-        return section;
+    public List<ReportRow> getReportRows() {
+        return reportRows;
     }
 
-    public void setSection(List<ReportRow> section) {
-        this.section = section;
+    public void setReportRows(List<ReportRow> reportRows) {
+        this.reportRows = reportRows;
     }
 }

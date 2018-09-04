@@ -5,23 +5,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 import com.prairiefarms.export.types.*;
-import com.prairiefarms.export.types.Exception;
-import org.apache.poi.ss.usermodel.BorderStyle;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.DataFormat;
-import org.apache.poi.ss.usermodel.FillPatternType;
-import org.apache.poi.ss.usermodel.Font;
-import org.apache.poi.ss.usermodel.HorizontalAlignment;
-import org.apache.poi.ss.usermodel.IndexedColors;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -32,326 +20,67 @@ class ExcelWorkbook {
 
     private Configuration configuration = new Configuration();
 
-    private static List<Line> lines;
-    private static int lineCount;
+    private CellStyle headerTextStyle;
 
-//    private static Report reportSection;
-    private static List<ReportColumn> columns;
+    private CellStyle labelTextStyle;
 
-    private static Sheet sheet;
-    private static Row row;
-    private static Cell cell;
+    private CellStyle subHeaderTextStyle;
 
-    private static int autoSizeColumns;
-    private static int position;
-    private static int length;
+    private CellStyle identificationStyle;
 
-    private static CellStyle headerTextStyle;
+    private CellStyle integerStyle;
 
-    private static CellStyle labelTextStyle;
+    private CellStyle doubleStyle;
 
-    private static CellStyle subHeaderTextStyle;
+    private CellStyle totalTextStyle;
 
-    private static CellStyle identificationStyle;
+    private CellStyle totalIntegerStyle;
 
-    private static CellStyle integerStyle;
+    private CellStyle totalDoubleStyle;
 
-    private static CellStyle doubleStyle;
+    private String fileName;
 
-    private static CellStyle totalTextStyle;
 
-    private static CellStyle totalIntegerStyle;
+    ExcelWorkbook(String fileName) throws IOException {
+        this.fileName = fileName;
+        writeReportLines(getReportData(fileName));
+    }
 
-    private static CellStyle totalDoubleStyle;
+    private Map<List<String>, String> getReportData(String fileName) throws IOException {
+        return getWriteableData(getTextFileLines(fileName), getReport(fileName));
+    }
 
-    private File file;
-
-    ExcelWorkbook(String jsonName, String fileName) throws IOException {
-        File textFile = new File(configuration.getProperty("workingDirectory") + fileName.trim() + ".txt");
-
-        FileReader fileReader = new FileReader(textFile);
-
-        BufferedReader bufferedReader = new BufferedReader(fileReader);
-
-        lines = new LinkedList<>();
-
-        lineCount = 0;
-
-        Report reportSection = getReportSection(jsonName, fileName);
-
-        List<Exception> exceptions = new LinkedList<>();
-
-        String nextLine;
-        while ((nextLine = bufferedReader.readLine()) != null) {
-
-            Line currentLine = new Line();
-            currentLine.setType(" ");
-            currentLine.setPrecision(0);
-            currentLine.setElement(0);
-            currentLine.setLine(nextLine);
-
-            if (lineCount < reportSection.getSection().size()
-                    && (!reportSection.getSection().get(lineCount).getName().equals("customer")
-                    && !reportSection.getSection().get(lineCount).getName().equals("product")
-                    && !reportSection.getSection().get(lineCount).getName().equals("detail")
-                    && !reportSection.getSection().get(lineCount).getName().equals("footer"))) {
-
-                currentLine.setType(reportSection.getSection().get(lineCount).getName());
-                currentLine.setElement(lineCount);
-
-                switch (reportSection.getSection().get(lineCount).getName().trim()) {
-
-                    case "header":
-                        Exception exception = new Exception();
-
-                        exception.setType("header");
-                        exception.setRepeatable(reportSection.getSection().get(lineCount).isRepeatable());
-                        exception.setElement(lineCount);
-
-                        if (nextLine.trim().contains("PAGE")) {
-                            exception.setLine(currentLine.getLine().substring(0, currentLine.getLine().trim().indexOf("PAGE")));
-
-                        } else {
-                            exception.setLine(currentLine.getLine());
-                        }
-
-                        exceptions.add(exception);
-
-                        break;
-
-                    case "label":
-                        exception = new Exception();
-
-                        exception.setType("label");
-                        exception.setRepeatable(reportSection.getSection().get(lineCount).isRepeatable());
-                        exception.setElement(lineCount);
-                        exception.setLine(nextLine);
-
-                        exceptions.add(exception);
-
-                        break;
-                }
-
-            } else {
-                for (int y = 0; y < reportSection.getSection().size(); y++) {
-                    ReportRow section;
-
-                    section = reportSection.getSection().get(y);
-
-                    if (currentLine.getLine().trim().contains("al Products Listed:") && section.getName().trim().equals("footer")) {
-                        currentLine.setType("footer");
-
-                        if (section.getIdentifier() != null) {
-                            if (currentLine.getLine().trim().contains(section.getIdentifier())) {
-                                currentLine.setElement(y);
-
-                                break;
-                            }
-
-                        } else {
-                            currentLine.setElement(y);
-
-                            break;
-                        }
-                    }
-
-                    if (currentLine.getLine().trim().contains("CUSTOMER:") && section.getName().trim().equals("customer")) {
-                        currentLine.setType("customer");
-
-                        currentLine.setElement(y);
-
-                        break;
-                    }
-
-                    if (currentLine.getLine().trim().contains("PRODUCT:") && section.getName().trim().equals("product")) {
-                        currentLine.setType("product");
-
-                        currentLine.setElement(y);
-
-                        break;
-                    }
-                }
-
-                if ("".equals(currentLine.getType().trim())) {
-                    for (Exception exception : exceptions) {
-
-                        if (currentLine.getLine().contains(exception.getLine())) {
-                            if (exception.isRepeatable()) {
-                                currentLine.setType(exception.getType());
-                                currentLine.setElement(exception.getElement());
-
-                            } else {
-                                currentLine.setType("SKIP");
-                            }
-
-                            break;
-                        }
-                    }
-                }
-
-                if (currentLine.getType().trim().equals("")) {
-                    currentLine.setType("detail");
-
-                    for (int y = 0; y < reportSection.getSection().size(); y++) {
-                        if (reportSection.getSection().get(y).getName().trim().equals(currentLine.getType().trim())) {
-                            currentLine.setElement(y);
-
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (!currentLine.getType().trim().equals("")) {
-                lines.add(currentLine);
-
-                lineCount++;
-            }
-        }
-
-        fileReader.close();
-
-
-
-//        if (!textFile.delete()){
-//            throw new FileNotFoundException(textFile.getName() + "not found while attempting delete");
-//        }
-
-
-
-        if (!lines.isEmpty()) {
-//            textFile.delete();
-
-            autoSizeColumns = 0;
-
+    private void writeReportLines(Map<List<String>, String> linesWithType) throws IOException {
+        if (!linesWithType.isEmpty()) {
             Workbook workBook = new XSSFWorkbook();
+            setWorkbookStyle(workBook);
 
-            headerTextStyle = workBook.createCellStyle();
-            Font headerTextFont = workBook.createFont();
-            headerTextFont.setBold(true);
-            headerTextStyle.setAlignment(HorizontalAlignment.LEFT);
-            headerTextStyle.setFont(headerTextFont);
+            Sheet sheet = workBook.createSheet("Report");
 
-            labelTextStyle = workBook.createCellStyle();
-            Font labelTextFont = workBook.createFont();
-            labelTextFont.setBold(true);
-            labelTextFont.setColor(IndexedColors.BLACK.index);
+            int rowIndex = 0;
+            boolean doneWritingHeaders = false;
+            for (Map.Entry<List<String>, String> lineWithType : linesWithType.entrySet()) {
+                List<String> cellValues = lineWithType.getKey();
+                String lintType = lineWithType.getValue();
 
-            labelTextStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
-            labelTextStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            labelTextStyle.setFont(labelTextFont);
-            labelTextStyle.setAlignment(HorizontalAlignment.CENTER);
-
-            subHeaderTextStyle = workBook.createCellStyle();
-            Font subHeaderTextFont = workBook.createFont();
-            subHeaderTextFont.setBold(true);
-            subHeaderTextStyle.setFont(subHeaderTextFont);
-            subHeaderTextStyle.setAlignment(HorizontalAlignment.LEFT);
-            subHeaderTextStyle.setBorderBottom(BorderStyle.THIN);
-
-            DataFormat identificationFormat = workBook.createDataFormat();
-            identificationStyle = workBook.createCellStyle();
-            identificationStyle.setDataFormat(identificationFormat.getFormat("#0"));
-            identificationStyle.setAlignment(HorizontalAlignment.RIGHT);
-
-            DataFormat integerFormat = workBook.createDataFormat();
-            integerStyle = workBook.createCellStyle();
-            integerStyle.setDataFormat(integerFormat.getFormat("_(* #,##0_);[RED]_(* \\(#,##0\\);_(* -??_);_(@_)"));
-            integerStyle.setAlignment(HorizontalAlignment.RIGHT);
-
-            DataFormat doubleFormat = workBook.createDataFormat();
-            doubleStyle = workBook.createCellStyle();
-            doubleStyle.setDataFormat(doubleFormat.getFormat("_(* #,##0.00_);[RED]_(* \\(#,##0.00\\);_(* -??_);_(@_)"));
-            doubleStyle.setAlignment(HorizontalAlignment.RIGHT);
-
-            totalTextStyle = workBook.createCellStyle();
-            Font totalTextFont = workBook.createFont();
-            totalTextFont.setBold(true);
-            totalTextFont.setColor(IndexedColors.BLACK.index);
-            totalTextStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
-            totalTextStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            totalTextStyle.setAlignment(HorizontalAlignment.RIGHT);
-            totalTextStyle.setFont(totalTextFont);
-
-            DataFormat totalIntegerFormat = workBook.createDataFormat();
-            totalIntegerStyle = workBook.createCellStyle();
-            Font totalIntegerFont = workBook.createFont();
-            totalIntegerFont.setBold(true);
-            totalIntegerFont.setColor(IndexedColors.BLACK.index);
-            totalIntegerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
-            totalIntegerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            totalIntegerStyle
-                    .setDataFormat(totalIntegerFormat.getFormat("_(* #,##0_);[RED]_(* \\(#,##0\\);_(* -??_);_(@_)"));
-            totalIntegerStyle.setAlignment(HorizontalAlignment.RIGHT);
-            totalIntegerStyle.setFont(totalIntegerFont);
-            totalIntegerStyle.setBorderTop(BorderStyle.THIN);
-            totalIntegerStyle.setBorderBottom(BorderStyle.DOUBLE);
-
-            DataFormat totalDoubleFormat = workBook.createDataFormat();
-            totalDoubleStyle = workBook.createCellStyle();
-            Font totalDoubleFont = workBook.createFont();
-            totalDoubleFont.setBold(true);
-            totalDoubleFont.setColor(IndexedColors.BLACK.index);
-            totalDoubleStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
-            totalDoubleStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            totalDoubleStyle.setDataFormat(
-                    totalDoubleFormat.getFormat("_(* #,##0.00_);[RED]_(* \\(#,##0.00\\);_(* -??_);_(@_)"));
-            totalDoubleStyle.setAlignment(HorizontalAlignment.RIGHT);
-            totalDoubleStyle.setFont(totalDoubleFont);
-            totalDoubleStyle.setBorderTop(BorderStyle.THIN);
-            totalDoubleStyle.setBorderBottom(BorderStyle.DOUBLE);
-
-            sheet = workBook.createSheet("Report");
-
-            lineCount = 0;
-
-            for (Line line : lines) {
-
-                for (int y = 0; y < reportSection.getSection().size(); y++) {
-                    if (reportSection.getSection().get(y).getName().trim().equals(line.getType().trim())
-                            && y == line.getElement()) {
-                        columns = new LinkedList<>();
-
-                        columns = reportSection.getSection().get(y).getColumns();
-
-                        break;
-                    }
-                }
-
-                switch (line.getType().trim()) {
+                switch (lintType) {
                     case "header":
-                        setHeader(line.getLine());
-
+                        if(!doneWritingHeaders){
+                            writeHeaderLine(cellValues, rowIndex++, sheet);
+                        }
                         break;
-
-                    case "customer":
-                        setCustomer(line.getLine());
-
-                        break;
-
-                    case "product":
-                        setProduct(line.getLine());
-
-                        break;
-
                     case "label":
-                        setLabel(line.getLine());
-
+                        writeLabelLine(cellValues, rowIndex++, sheet);
                         break;
-
                     case "detail":
-                        setDetail(line.getLine());
-
+                        doneWritingHeaders = true;
+                        writeDetailLine(cellValues, rowIndex++, sheet);
                         break;
-
-                    case "footer":
-                        setFooter(line.getLine());
-
-                        break;
+//                    case "footer":
+//                        writeFooterLine(cellValues, rowIndex++, sheet);
+//                        break;
                 }
             }
-
-            for(short resizeColumn = 0; resizeColumn < autoSizeColumns; resizeColumn++) sheet.autoSizeColumn(resizeColumn);
 
             String xlsxFile = fileName + ".xlsx";
 
@@ -360,283 +89,295 @@ class ExcelWorkbook {
             workBook.write(newXLSXfile);
 
             newXLSXfile.close();
-
             workBook.close();
 
-            file = new File(configuration.getProperty("workingDirectory") + xlsxFile.trim());
+            new File(configuration.getProperty("workingDirectory") + xlsxFile.trim());
+
+            this.fileName = xlsxFile;
 
         }
     }
 
-    String getFileName(){
-        return file.getName();
+    private void setWorkbookStyle(Workbook workBook) {
+        headerTextStyle = workBook.createCellStyle();
+        Font headerTextFont = workBook.createFont();
+        headerTextFont.setBold(true);
+        headerTextStyle.setAlignment(HorizontalAlignment.LEFT);
+        headerTextStyle.setFont(headerTextFont);
+
+        labelTextStyle = workBook.createCellStyle();
+        Font labelTextFont = workBook.createFont();
+        labelTextFont.setBold(true);
+        labelTextFont.setColor(IndexedColors.BLACK.index);
+
+        labelTextStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
+        labelTextStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        labelTextStyle.setFont(labelTextFont);
+        labelTextStyle.setAlignment(HorizontalAlignment.CENTER);
+
+        subHeaderTextStyle = workBook.createCellStyle();
+        Font subHeaderTextFont = workBook.createFont();
+        subHeaderTextFont.setBold(true);
+        subHeaderTextStyle.setFont(subHeaderTextFont);
+        subHeaderTextStyle.setAlignment(HorizontalAlignment.LEFT);
+        subHeaderTextStyle.setBorderBottom(BorderStyle.THIN);
+
+        DataFormat identificationFormat = workBook.createDataFormat();
+        identificationStyle = workBook.createCellStyle();
+        identificationStyle.setDataFormat(identificationFormat.getFormat("#0"));
+        identificationStyle.setAlignment(HorizontalAlignment.RIGHT);
+
+        DataFormat integerFormat = workBook.createDataFormat();
+        integerStyle = workBook.createCellStyle();
+        integerStyle.setDataFormat(integerFormat.getFormat("_(* #,##0_);[RED]_(* \\(#,##0\\);_(* -??_);_(@_)"));
+        integerStyle.setAlignment(HorizontalAlignment.RIGHT);
+
+        DataFormat doubleFormat = workBook.createDataFormat();
+        doubleStyle = workBook.createCellStyle();
+        doubleStyle.setDataFormat(doubleFormat.getFormat("_(* #,##0.00_);[RED]_(* \\(#,##0.00\\);_(* -??_);_(@_)"));
+        doubleStyle.setAlignment(HorizontalAlignment.RIGHT);
+
+        totalTextStyle = workBook.createCellStyle();
+        Font totalTextFont = workBook.createFont();
+        totalTextFont.setBold(true);
+        totalTextFont.setColor(IndexedColors.BLACK.index);
+        totalTextStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
+        totalTextStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        totalTextStyle.setAlignment(HorizontalAlignment.RIGHT);
+        totalTextStyle.setFont(totalTextFont);
+
+        DataFormat totalIntegerFormat = workBook.createDataFormat();
+        totalIntegerStyle = workBook.createCellStyle();
+        Font totalIntegerFont = workBook.createFont();
+        totalIntegerFont.setBold(true);
+        totalIntegerFont.setColor(IndexedColors.BLACK.index);
+        totalIntegerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
+        totalIntegerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        totalIntegerStyle
+                .setDataFormat(totalIntegerFormat.getFormat("_(* #,##0_);[RED]_(* \\(#,##0\\);_(* -??_);_(@_)"));
+        totalIntegerStyle.setAlignment(HorizontalAlignment.RIGHT);
+        totalIntegerStyle.setFont(totalIntegerFont);
+        totalIntegerStyle.setBorderTop(BorderStyle.THIN);
+        totalIntegerStyle.setBorderBottom(BorderStyle.DOUBLE);
+
+        DataFormat totalDoubleFormat = workBook.createDataFormat();
+        totalDoubleStyle = workBook.createCellStyle();
+        Font totalDoubleFont = workBook.createFont();
+        totalDoubleFont.setBold(true);
+        totalDoubleFont.setColor(IndexedColors.BLACK.index);
+        totalDoubleStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
+        totalDoubleStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        totalDoubleStyle.setDataFormat(
+                totalDoubleFormat.getFormat("_(* #,##0.00_);[RED]_(* \\(#,##0.00\\);_(* -??_);_(@_)"));
+        totalDoubleStyle.setAlignment(HorizontalAlignment.RIGHT);
+        totalDoubleStyle.setFont(totalDoubleFont);
+        totalDoubleStyle.setBorderTop(BorderStyle.THIN);
+        totalDoubleStyle.setBorderBottom(BorderStyle.DOUBLE);
     }
 
-    private Report getReportSection(String jsonName, String matchToName) throws IOException {
-        File jsonFile = new File(configuration.getProperty("jsonMaps") + jsonName.trim() + ".json");
+    private Report getReport(String textFileName) throws IOException {
+        Report returnME = null;
 
-        Report thisReport = null;
-
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        List<Report> reports = objectMapper.readValue(jsonFile, new TypeReference<List<Report>>() {
+        File jsonFile = new File(configuration.getProperty("jsonMaps") + textFileName.trim() + ".json");
+        List<Report> reports = new ObjectMapper().readValue(jsonFile, new TypeReference<List<Report>>() {
         });
 
         for (Report report : reports) {
-            if (matchToName.trim().toLowerCase().contains(report.getTitle().trim().toLowerCase())) {
-                thisReport = report;
+            if (textFileName.trim().toLowerCase().contains(report.getTitle().trim().toLowerCase())) {
+                returnME = report;
                 break;
             }
         }
 
-        if(thisReport == null){
-            throw new IOException("Report Conversion layout with title: " + matchToName + " not found in conversion file: " +jsonName);
+        if (returnME == null) {
+            throw new IOException("Report Conversion layout with title: " + textFileName + " not found in conversion file: " + fileName + ".json");
         }
-        return thisReport;
+        return returnME;
     }
 
-    private static void setHeader(String parseLine) {
-        StringBuilder headerString = new StringBuilder();
+    private String determineTextFileLineRowType(String textLine, Report report) {
+        String returnMe = "unknown";
+        if (!textLine.isEmpty()) {
+            for (ReportRow reportRow : report.getReportRows()) {
+                //build list of invalid areas
+                Map<Integer, Integer> invalidPositions = new LinkedHashMap<>();
+                Map<Integer, Integer> validPositions = new LinkedHashMap<>();
+                int startingIndex = 0;
+                for (ReportColumn reportColumn : reportRow.getColumns()) {
+                    int beginCharacterIndex = reportColumn.getPosition()[0] - 1; //rpg starts indexes at 1
+                    int endCharacterIndex = reportColumn.getPosition()[1] - 1; //rpg starts indexes at 1
+                    invalidPositions.put(startingIndex, beginCharacterIndex);
+                    validPositions.put(beginCharacterIndex, endCharacterIndex);
+                    startingIndex = endCharacterIndex + 1;
+                }
+                invalidPositions.put(startingIndex, startingIndex + textLine.substring(startingIndex).length());
+                //test that characters are in position.
+                Boolean positionalMatch = true;
+                for (Map.Entry<Integer, Integer> entry : invalidPositions.entrySet()) {
+                    if (StringUtils.isNotBlank(textLine.substring(entry.getKey(), entry.getValue()))) {
+                        positionalMatch = false;
+                    }
+                }
 
-        row = sheet.createRow(lineCount);
+                // and of correct Type
+                Boolean dataTypesMatch = true;
+                if (positionalMatch) {
+                    for (ReportColumn reportColumn : reportRow.getColumns()) {
+                        String validateMe = textLine.substring(reportColumn.getPosition()[0] - 1, reportColumn.getPosition()[1]);
+                        if (StringUtils.isNotBlank(validateMe)) {
+                            switch (reportColumn.getType()) {
+                                case "integer":
+                                    try {
+                                        Integer.parseInt(validateMe.trim());
+                                    } catch (NumberFormatException numberFormatException) {
+                                        dataTypesMatch = false;
+                                    }
+                                case "double":
+                                    try {
+                                        Float.parseFloat(validateMe.trim());
+                                    } catch (NumberFormatException numberFormatException) {
+                                        dataTypesMatch = false;
+                                    }
+                            }
+                        }
+                    }
+                }
 
-        for (ReportColumn column : columns) {
-            position = column.getPosition()[0];
-            length = column.getPosition()[1];
+                //match!
+                if (positionalMatch && dataTypesMatch) {
+                    returnMe = reportRow.getName();
+                }
 
-            headerString.append(parseLine.substring(position - 1, Math.min(position + length, parseLine.length())).trim()).append("  ");
+            }
+        } else {
+            returnMe = "blank";
         }
 
-        cell = row.createCell(0);
-
-        cell.setCellValue(headerString.toString());
-
-        cell.setCellStyle(headerTextStyle);
-
-        sheet.addMergedRegion(new CellRangeAddress(lineCount, lineCount, 0, 9));
-
-        lineCount++;
+        return returnMe;
     }
 
-    private static void setCustomer(String parseLine) {
-        lineCount++;
+    private List<String> getTextFileLines(String textFileName) throws IOException {
+        List<String> textLines = new ArrayList<>();
+        String nextLine;
+        File textFile = new File(configuration.getProperty("workingDirectory") + textFileName.trim() + ".txt");
+        FileReader fileReader = new FileReader(textFile);
+        BufferedReader bufferedReader = new BufferedReader(fileReader);
+        while ((nextLine = bufferedReader.readLine()) != null) {
+            textLines.add(nextLine);
+        }
+        fileReader.close();
+        return textLines;
+    }
 
-        row = sheet.createRow(lineCount);
+    String getFileName() {
+        return fileName;
+    }
 
-        for (int columnInfo = 0; columnInfo < columns.size(); columnInfo++) {
-            position = columns.get(columnInfo).getPosition()[0];
-            length = columns.get(columnInfo).getPosition()[1];
 
-            switch (columns.get(columnInfo).getType()) {
-                case "string":
-                    cell = row.createCell(columnInfo);
+    private void writeHeaderLine(List<String> cellValues, int rowIndex, Sheet sheet) {
+        Row row = sheet.createRow(rowIndex);
 
-                    cell.setCellValue(parseLine.substring(position - 1, Math.min(position + length, parseLine.length())));
+        int cellIndex = 0;
+        for(String cellValue : cellValues){
+            Cell cell = row.createCell(cellIndex++);
+            cell.setCellValue(cellValue);
+            cell.setCellStyle(headerTextStyle);
+        }
+    }
 
-                    cell.setCellStyle(subHeaderTextStyle);
+    private void writeLabelLine(List<String> cellValues, int rowIndex, Sheet sheet) {
+        Row row = sheet.createRow(rowIndex);
 
-                    break;
+        int cellIndex = 0;
+        for(String cellValue : cellValues){
+            Cell cell = row.createCell(cellIndex++);
+            cell.setCellValue(cellValue);
+            cell.setCellStyle(labelTextStyle);
+        }
+    }
 
-                case "integer":
-                    cell = row.createCell(columnInfo);
+    private void writeDetailLine(List<String> cellValues, int rowIndex, Sheet sheet) {
+        Row row = sheet.createRow(rowIndex);
+        int cellIndex = 0;
+        for(String cellValue : cellValues){
+            Cell cell = row.createCell(cellIndex++);
+            cell.setCellValue(cellValue);
+//            cell.setCellStyle();
+        }
+    }
 
-                    try {
-                        cell.setCellValue(Integer
-                                .valueOf(parseLine.substring(position - 1, Math.min(position + length, parseLine.length()))
-                                        .trim().replace("-", "")));
 
-                    } catch (NumberFormatException e) {
-                        cell.setCellValue(parseLine.substring(position - 1, Math.min(position + length, parseLine.length()))
-                                .trim());
+    private void writeFooterLine(List<String> cellValues, int rowIndex, Sheet sheet) {
+        Row row = sheet.createRow(rowIndex);
+        int cellIndex = 0;
+        for(String cellValue : cellValues){
+            Cell cell = row.createCell(cellIndex++);
+            cell.setCellValue(cellValue);
+            cell.setCellStyle(totalTextStyle);
+        }
+    }
+
+    private Map<List<String>, String> getWriteableData(List<String> textLines, Report report) {
+        Map<List<String>, String> returnMe = new LinkedHashMap<>();
+        for(String textLine : textLines){
+            if (!textLine.isEmpty()) {
+                for (ReportRow reportRow : report.getReportRows()) {
+                    //build list of invalid areas
+                    Map<Integer, Integer> invalidPositions = new LinkedHashMap<>();
+                    Map<Integer, Integer> validPositions = new LinkedHashMap<>();
+                    int startingIndex = 0;
+                    for (ReportColumn reportColumn : reportRow.getColumns()) {
+                        int beginCharacterIndex = reportColumn.getPosition()[0] - 1; //rpg starts indexes at 1
+                        int endCharacterIndex = reportColumn.getPosition()[1] - 1; //rpg starts indexes at 1
+                        invalidPositions.put(startingIndex, beginCharacterIndex);
+                        validPositions.put(beginCharacterIndex, endCharacterIndex);
+                        startingIndex = endCharacterIndex + 1;
+                    }
+                    invalidPositions.put(startingIndex, startingIndex + textLine.substring(startingIndex).length());
+                    //test that characters are in position.
+                    Boolean positionalMatch = true;
+                    for (Map.Entry<Integer, Integer> entry : invalidPositions.entrySet()) {
+                        if (StringUtils.isNotBlank(textLine.substring(entry.getKey(), entry.getValue()))) {
+                            positionalMatch = false;
+                        }
                     }
 
-                    break;
-
-                case "double":
-
-                    break;
-            }
-        }
-
-        sheet.addMergedRegion(new CellRangeAddress(lineCount, lineCount, 0, 9));
-
-        lineCount++;
-    }
-
-    private static void setProduct(String parseLine) {
-        lineCount++;
-
-        row = sheet.createRow(lineCount);
-
-        headerLoop(parseLine, subHeaderTextStyle);
-
-        sheet.addMergedRegion(new CellRangeAddress(lineCount, lineCount, 0, 9));
-
-        lineCount++;
-    }
-
-    private static void setLabel(String parseLine) {
-        row = sheet.createRow(lineCount);
-
-        autoSizeColumns = columns.size();
-
-        headerLoop(parseLine, labelTextStyle);
-
-        lineCount++;
-    }
-
-    private static void headerLoop(String parseLine, CellStyle subHeaderTextStyle) {
-        for (int columnInfo = 0; columnInfo < columns.size(); columnInfo++) {
-            position = columns.get(columnInfo).getPosition()[0];
-            length = columns.get(columnInfo).getPosition()[1];
-
-            switch (columns.get(columnInfo).getType()) {
-                case "string":
-                    cell = row.createCell(columnInfo);
-
-                    cell.setCellValue(parseLine.substring(position - 1, Math.min(position + length, parseLine.length())));
-
-                    cell.setCellStyle(subHeaderTextStyle);
-
-                    break;
-
-                case "integer":
-
-                    break;
-
-                case "double":
-
-                    break;
-            }
-        }
-    }
-
-    private static void setDetail(String parseLine) {
-        row = sheet.createRow(lineCount);
-
-        for (int columnInfo = 0; columnInfo < columns.size(); columnInfo++) {
-            position = columns.get(columnInfo).getPosition()[0];
-            length = columns.get(columnInfo).getPosition()[1];
-
-            switch (columns.get(columnInfo).getType()) {
-                case "string":
-                    cell = row.createCell(columnInfo);
-
-                    cell.setCellValue(parseLine.substring(position - 1, Math.min(position + length, parseLine.length())));
-
-                    break;
-
-                case "integer":
-                    cell = row.createCell(columnInfo);
-
-                    if (columns.get(columnInfo).getFormat() != null && columns.get(columnInfo).getFormat().trim().equals("identification")) {
-                        cell.setCellValue(Integer.valueOf(
-                                parseLine.substring(position - 1, Math.min(position + length, parseLine.length()))
-                                        .trim()));
-
-                        cell.setCellStyle(identificationStyle);
-
-                    } else {
-                        parse(parseLine);
-
-                        cell.setCellStyle(integerStyle);
+                    // and of correct Type
+                    Boolean dataTypesMatch = true;
+                    List<String> fieldValues = new ArrayList<>();
+                    if (positionalMatch) {
+                        for (ReportColumn reportColumn : reportRow.getColumns()) {
+                            String validateMe = textLine.substring(reportColumn.getPosition()[0] - 1, reportColumn.getPosition()[1]);
+                            fieldValues.add(validateMe);
+                            if (StringUtils.isNotBlank(validateMe)) {
+                                switch (reportColumn.getType()) {
+                                    case "integer":
+                                        try {
+                                            Integer.parseInt(validateMe.trim());
+                                        } catch (NumberFormatException numberFormatException) {
+                                            dataTypesMatch = false;
+                                        }
+                                    case "double":
+                                        try {
+                                            Float.parseFloat(validateMe.trim());
+                                        } catch (NumberFormatException numberFormatException) {
+                                            dataTypesMatch = false;
+                                        }
+                                }
+                            }
+                        }
                     }
 
-                    break;
+                    //match!
+                    if (positionalMatch && dataTypesMatch) {
+                        returnMe.put(fieldValues, reportRow.getName());
+                    }
 
-                case "double":
-                    cell = row.createCell(columnInfo);
-
-                    dupeCode(parseLine);
-
-                    cell.setCellStyle(doubleStyle);
-
-                    break;
+                }
             }
         }
 
-        lineCount++;
-    }
-
-    private static void dupeCode(String parseLine) {
-        try {
-            if (parseLine.substring(position - 1, Math.min(position + length, parseLine.length()))
-                    .contains("-")) {
-                cell.setCellValue(-1 * Double.valueOf(
-                        parseLine.substring(position - 1, Math.min(position + length, parseLine.length()))
-                                .trim().replace("-", "")));
-
-            } else {
-                cell.setCellValue(Double.valueOf(
-                        parseLine.substring(position - 1, Math.min(position + length, parseLine.length()))
-                                .trim().replace("-", "")));
-            }
-
-        } catch (NumberFormatException e) {
-            cell.setCellValue(parseLine.substring(position - 1, Math.min(position + length, parseLine.length()))
-                    .trim());
-        }
-    }
-
-    private static void parse(String parseLine) {
-        try {
-            if (parseLine.substring(position - 1, Math.min(position + length, parseLine.length()))
-                    .contains("-")) {
-                cell.setCellValue(-1 * Integer.valueOf(
-                        parseLine.substring(position - 1, Math.min(position + length, parseLine.length()))
-                                .trim().replace("-", "")));
-
-            } else {
-                cell.setCellValue(Integer.valueOf(
-                        parseLine.substring(position - 1, Math.min(position + length, parseLine.length()))
-                                .trim().replace("-", "")));
-            }
-
-        } catch (NumberFormatException e) {
-            cell.setCellValue(parseLine.substring(position - 1, Math.min(position + length, parseLine.length()))
-                    .trim());
-
-        }
-    }
-
-    private static void setFooter(String parseLine) {
-        row = sheet.createRow(lineCount);
-
-        for (int columnInfo = 0; columnInfo < columns.size(); columnInfo++) {
-            position = columns.get(columnInfo).getPosition()[0];
-            length = columns.get(columnInfo).getPosition()[1];
-
-            switch (columns.get(columnInfo).getType()) {
-                case "string":
-                    cell = row.createCell(columnInfo);
-
-                    cell.setCellValue(parseLine.substring(position - 1, Math.min(position + length, parseLine.length())));
-
-                    cell.setCellStyle(totalTextStyle);
-
-                    break;
-
-                case "integer":
-                    cell = row.createCell(columnInfo);
-
-                    parse(parseLine);
-
-                    cell.setCellStyle(totalIntegerStyle);
-
-                    break;
-
-                case "double":
-                    cell = row.createCell(columnInfo);
-
-                    dupeCode(parseLine);
-
-                    cell.setCellStyle(totalDoubleStyle);
-
-                    break;
-            }
-        }
-
-        lineCount++;
+        return returnMe;
     }
 
 }
