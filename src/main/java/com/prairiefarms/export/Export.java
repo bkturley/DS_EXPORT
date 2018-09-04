@@ -1,10 +1,24 @@
 package com.prairiefarms.export;
 
-import com.prairiefarms.export.classes.ExportReportApplication;
-
 public class Export {
 
+    private static ExportReportApplication exportReportApplication;
+
+    public Export(){
+    }
+
+    Export(ExportReportApplication exportReportApplication){
+        this.exportReportApplication = exportReportApplication;
+    }
+
     public static void main(String[] args){
-        new ExportReportApplication().run(args);
+        try{
+            if(exportReportApplication == null){
+                exportReportApplication = new ExportReportApplication(args[0]);
+            }
+            exportReportApplication.run(args);
+        }catch (java.lang.Exception exception){
+            exception.printStackTrace();
+        }
     }
 }

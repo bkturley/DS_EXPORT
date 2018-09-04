@@ -1,9 +1,8 @@
-package com.prairiefarms.export.classes;
+package com.prairiefarms.export;
 
 import java.io.*;
 import java.util.*;
 
-import com.prairiefarms.export.types.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -14,15 +13,35 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 class ExcelWorkbook {
 
-    private Configuration configuration = new Configuration();
-
-    private Workbook workBook;
-
+    // attributes
     private String fileName;
 
+    //dependencies
+    private ReportAccess reportAccess;
+    private Configuration configuration;
+    private Workbook workBook;
+    private FileLineList fileLineList;
 
-    ExcelWorkbook(String fileName) throws IOException {
+
+    public ExcelWorkbook(String fileName) throws IOException {
+        this(fileName,
+                new ReportAccess(),
+                new XSSFWorkbook(),
+                new Configuration(),
+                new FileLineList());
+    }
+
+    ExcelWorkbook(String fileName,
+                  ReportAccess reportAccess,
+                  Workbook workBook,
+                  Configuration configuration,
+                  FileLineList fileLineList) throws IOException {
+
         this.fileName = fileName;
+        this.reportAccess = reportAccess;
+        this.workBook = workBook;
+        this.configuration = configuration;
+        this.fileLineList = fileLineList;
         writeReportLines(getReportData(fileName));
     }
 
@@ -31,13 +50,12 @@ class ExcelWorkbook {
     }
 
     private Map<List<String>, String> getReportData(String fileName) throws IOException {
-        return getWriteableData(getTextFileLines(fileName), getReport(fileName));
+        return getWriteableData(fileLineList.getLines(fileName), reportAccess.getReport(fileName));
     }
 
     private void writeReportLines(Map<List<String>, String> linesWithType) throws IOException {
         if (!linesWithType.isEmpty()) {
 
-            workBook = new XSSFWorkbook();
 
             Sheet sheet = workBook.createSheet("Report");
 
@@ -49,7 +67,7 @@ class ExcelWorkbook {
 
                 switch (lineType) {
                     case "header":
-                        if(!doneWritingHeaders){
+                        if (!doneWritingHeaders) {
                             writeHeaderLine(cellValues, rowIndex++, sheet);
                         }
                         break;
@@ -85,45 +103,11 @@ class ExcelWorkbook {
         }
     }
 
-
-    private Report getReport(String textFileName) throws IOException {
-        Report returnME = null;
-
-        File jsonFile = new File(configuration.getProperty("jsonMaps") + textFileName.trim() + ".json");
-        List<Report> reports = new ObjectMapper().readValue(jsonFile, new TypeReference<List<Report>>() {
-        });
-
-        for (Report report : reports) {
-            if (textFileName.trim().toLowerCase().contains(report.getTitle().trim().toLowerCase())) {
-                returnME = report;
-                break;
-            }
-        }
-
-        if (returnME == null) {
-            throw new IOException("Report Conversion layout with title: " + textFileName + " not found in conversion file: " + fileName + ".json");
-        }
-        return returnME;
-    }
-
-    private List<String> getTextFileLines(String textFileName) throws IOException {
-        List<String> textLines = new ArrayList<>();
-        String nextLine;
-        File textFile = new File(configuration.getProperty("workingDirectory") + textFileName.trim() + ".txt");
-        FileReader fileReader = new FileReader(textFile);
-        BufferedReader bufferedReader = new BufferedReader(fileReader);
-        while ((nextLine = bufferedReader.readLine()) != null) {
-            textLines.add(nextLine);
-        }
-        fileReader.close();
-        return textLines;
-    }
-
     private void writeHeaderLine(List<String> cellValues, int rowIndex, Sheet sheet) {
         Row row = sheet.createRow(rowIndex);
 
         int cellIndex = 0;
-        for(String cellValue : cellValues){
+        for (String cellValue : cellValues) {
             Cell cell = row.createCell(cellIndex++);
             cell.setCellValue(cellValue);
             cell.setCellStyle(getHeaderTextStyle());
@@ -144,7 +128,7 @@ class ExcelWorkbook {
         Row row = sheet.createRow(rowIndex);
 
         int cellIndex = 0;
-        for(String cellValue : cellValues){
+        for (String cellValue : cellValues) {
             Cell cell = row.createCell(cellIndex++);
             cell.setCellValue(cellValue);
             cell.setCellStyle(getLabelTextStyle());
@@ -167,7 +151,7 @@ class ExcelWorkbook {
     private void writeDetailLine(List<String> cellValues, int rowIndex, Sheet sheet) {
         Row row = sheet.createRow(rowIndex);
         int cellIndex = 0;
-        for(String cellValue : cellValues){
+        for (String cellValue : cellValues) {
             Cell cell = row.createCell(cellIndex++);
             cell.setCellValue(cellValue);
 //            cell.setCellStyle();
@@ -177,7 +161,7 @@ class ExcelWorkbook {
     private void writeFooterLine(List<String> cellValues, int rowIndex, Sheet sheet) {
         Row row = sheet.createRow(rowIndex);
         int cellIndex = 0;
-        for(String cellValue : cellValues){
+        for (String cellValue : cellValues) {
             Cell cell = row.createCell(cellIndex++);
             cell.setCellValue(cellValue);
             cell.setCellStyle(getTotalTextStyle());
@@ -197,13 +181,13 @@ class ExcelWorkbook {
     }
 
     private void errorOnUnknownRecordType(List<String> cellValues) throws IOException {
-       throw new IOException(".xlsx conversion failed, This record has unknown type:" + System.getProperty("line.separator")
-                   + cellValues.get(0));
+        throw new IOException(".xlsx conversion failed, This record has unknown type:" + System.getProperty("line.separator")
+                + cellValues.get(0));
     }
 
     private Map<List<String>, String> getWriteableData(List<String> textLines, Report report) {
         Map<List<String>, String> returnMe = new LinkedHashMap<>();
-        for(String textLine : textLines){
+        for (String textLine : textLines) {
             if (!textLine.isEmpty()) {
                 for (ReportRow reportRow : report.getReportRows()) {
                     //build list of invalid areas
@@ -263,7 +247,7 @@ class ExcelWorkbook {
         return returnMe;
     }
 
-    public void autoSizeColumns(Workbook workbook) {
+    private void autoSizeColumns(Workbook workbook) {
         int numberOfSheets = workbook.getNumberOfSheets();
         for (int i = 0; i < numberOfSheets; i++) {
             Sheet sheet = workbook.getSheetAt(i);

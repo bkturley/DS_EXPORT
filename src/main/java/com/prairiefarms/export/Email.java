@@ -1,4 +1,4 @@
-package com.prairiefarms.export.classes;
+package com.prairiefarms.export;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -24,21 +24,19 @@ import javax.mail.internet.MimeMultipart;
 
 
 
-class Email {
+public class Email {
 
     private Configuration configuration = new Configuration();
 
-    private String documentName;
     private ArrayList<String> attachments = new ArrayList<>();
     private String xlsxError = "";
 
     Email(String documentName){
-        this.documentName = documentName;
         attachments.add(getTxtFileAttachment(documentName));
         attachments.add(getPdfFileAttachment(documentName));
         try {
             attachments.add(getXlsxFileAttachment(documentName));
-        }catch (Exception e){
+        }catch (java.lang.Exception e){
             StringWriter sw = new StringWriter();
             e.printStackTrace(new PrintWriter(sw));
             xlsxError = "Problem converting to Xlsx format. Technical details: <br>" + sw.toString();
@@ -110,11 +108,6 @@ class Email {
         message.setSentDate(new Date());
 
         Transport.send(message);
-
-        //TODO: ifs cleanup
-//        for(String attachmentName : attachments){
-//            File deleteMe = new File(configuration.getProperty("workingDirectory") + attachmentName);
-//        }
 
     }
 

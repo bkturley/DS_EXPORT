@@ -1,4 +1,4 @@
-package com.prairiefarms.export.types;
+package com.prairiefarms.export;
 
 import java.util.List;
 

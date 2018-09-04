@@ -1,4 +1,4 @@
-package com.prairiefarms.export.classes;
+package com.prairiefarms.export;
 import java.io.File;
 import java.util.List;
 
