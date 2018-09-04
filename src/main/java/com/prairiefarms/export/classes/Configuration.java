@@ -7,7 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-class Configuration {
+public class Configuration {
 
     private static Properties configuration;
 

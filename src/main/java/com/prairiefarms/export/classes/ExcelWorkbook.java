@@ -14,26 +14,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 class ExcelWorkbook {
 
-    public static final String UNKNOWN = "unknown";
     private Configuration configuration = new Configuration();
 
-    private CellStyle headerTextStyle;
-
-    private CellStyle labelTextStyle;
-
-    private CellStyle subHeaderTextStyle;
-
-    private CellStyle identificationStyle;
-
-    private CellStyle integerStyle;
-
-    private CellStyle doubleStyle;
-
-    private CellStyle totalTextStyle;
-
-    private CellStyle totalIntegerStyle;
-
-    private CellStyle totalDoubleStyle;
+    private Workbook workBook;
 
     private String fileName;
 
@@ -53,8 +36,8 @@ class ExcelWorkbook {
 
     private void writeReportLines(Map<List<String>, String> linesWithType) throws IOException {
         if (!linesWithType.isEmpty()) {
-            Workbook workBook = new XSSFWorkbook();
-            setWorkbookStyle(workBook);
+
+            workBook = new XSSFWorkbook();
 
             Sheet sheet = workBook.createSheet("Report");
 
@@ -80,7 +63,6 @@ class ExcelWorkbook {
                     case "footer":
                         writeFooterLine(cellValues, rowIndex++, sheet);
                         break;
-                    case UNKNOWN: //fallthrough To default
                     default:
                         errorOnUnknownRecordType(cellValues);
                 }
@@ -103,82 +85,6 @@ class ExcelWorkbook {
         }
     }
 
-    private void setWorkbookStyle(Workbook workBook) {
-        headerTextStyle = workBook.createCellStyle();
-        Font headerTextFont = workBook.createFont();
-        headerTextFont.setBold(true);
-        headerTextStyle.setAlignment(HorizontalAlignment.LEFT);
-        headerTextStyle.setFont(headerTextFont);
-
-        labelTextStyle = workBook.createCellStyle();
-        Font labelTextFont = workBook.createFont();
-        labelTextFont.setBold(true);
-        labelTextFont.setColor(IndexedColors.BLACK.index);
-
-        labelTextStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
-        labelTextStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        labelTextStyle.setFont(labelTextFont);
-        labelTextStyle.setAlignment(HorizontalAlignment.CENTER);
-
-        subHeaderTextStyle = workBook.createCellStyle();
-        Font subHeaderTextFont = workBook.createFont();
-        subHeaderTextFont.setBold(true);
-        subHeaderTextStyle.setFont(subHeaderTextFont);
-        subHeaderTextStyle.setAlignment(HorizontalAlignment.LEFT);
-        subHeaderTextStyle.setBorderBottom(BorderStyle.THIN);
-
-        DataFormat identificationFormat = workBook.createDataFormat();
-        identificationStyle = workBook.createCellStyle();
-        identificationStyle.setDataFormat(identificationFormat.getFormat("#0"));
-        identificationStyle.setAlignment(HorizontalAlignment.RIGHT);
-
-        DataFormat integerFormat = workBook.createDataFormat();
-        integerStyle = workBook.createCellStyle();
-        integerStyle.setDataFormat(integerFormat.getFormat("_(* #,##0_);[RED]_(* \\(#,##0\\);_(* -??_);_(@_)"));
-        integerStyle.setAlignment(HorizontalAlignment.RIGHT);
-
-        DataFormat doubleFormat = workBook.createDataFormat();
-        doubleStyle = workBook.createCellStyle();
-        doubleStyle.setDataFormat(doubleFormat.getFormat("_(* #,##0.00_);[RED]_(* \\(#,##0.00\\);_(* -??_);_(@_)"));
-        doubleStyle.setAlignment(HorizontalAlignment.RIGHT);
-
-        totalTextStyle = workBook.createCellStyle();
-        Font totalTextFont = workBook.createFont();
-        totalTextFont.setBold(true);
-        totalTextFont.setColor(IndexedColors.BLACK.index);
-        totalTextStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
-        totalTextStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        totalTextStyle.setAlignment(HorizontalAlignment.RIGHT);
-        totalTextStyle.setFont(totalTextFont);
-
-        DataFormat totalIntegerFormat = workBook.createDataFormat();
-        totalIntegerStyle = workBook.createCellStyle();
-        Font totalIntegerFont = workBook.createFont();
-        totalIntegerFont.setBold(true);
-        totalIntegerFont.setColor(IndexedColors.BLACK.index);
-        totalIntegerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
-        totalIntegerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        totalIntegerStyle
-                .setDataFormat(totalIntegerFormat.getFormat("_(* #,##0_);[RED]_(* \\(#,##0\\);_(* -??_);_(@_)"));
-        totalIntegerStyle.setAlignment(HorizontalAlignment.RIGHT);
-        totalIntegerStyle.setFont(totalIntegerFont);
-        totalIntegerStyle.setBorderTop(BorderStyle.THIN);
-        totalIntegerStyle.setBorderBottom(BorderStyle.DOUBLE);
-
-        DataFormat totalDoubleFormat = workBook.createDataFormat();
-        totalDoubleStyle = workBook.createCellStyle();
-        Font totalDoubleFont = workBook.createFont();
-        totalDoubleFont.setBold(true);
-        totalDoubleFont.setColor(IndexedColors.BLACK.index);
-        totalDoubleStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
-        totalDoubleStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        totalDoubleStyle.setDataFormat(
-                totalDoubleFormat.getFormat("_(* #,##0.00_);[RED]_(* \\(#,##0.00\\);_(* -??_);_(@_)"));
-        totalDoubleStyle.setAlignment(HorizontalAlignment.RIGHT);
-        totalDoubleStyle.setFont(totalDoubleFont);
-        totalDoubleStyle.setBorderTop(BorderStyle.THIN);
-        totalDoubleStyle.setBorderBottom(BorderStyle.DOUBLE);
-    }
 
     private Report getReport(String textFileName) throws IOException {
         Report returnME = null;
@@ -220,8 +126,18 @@ class ExcelWorkbook {
         for(String cellValue : cellValues){
             Cell cell = row.createCell(cellIndex++);
             cell.setCellValue(cellValue);
-            cell.setCellStyle(headerTextStyle);
+            cell.setCellStyle(getHeaderTextStyle());
         }
+    }
+
+    private CellStyle getHeaderTextStyle() {
+        CellStyle headerTextStyle;
+        headerTextStyle = workBook.createCellStyle();
+        Font headerTextFont = workBook.createFont();
+        headerTextFont.setBold(true);
+        headerTextStyle.setAlignment(HorizontalAlignment.LEFT);
+        headerTextStyle.setFont(headerTextFont);
+        return headerTextStyle;
     }
 
     private void writeLabelLine(List<String> cellValues, int rowIndex, Sheet sheet) {
@@ -231,8 +147,21 @@ class ExcelWorkbook {
         for(String cellValue : cellValues){
             Cell cell = row.createCell(cellIndex++);
             cell.setCellValue(cellValue);
-            cell.setCellStyle(labelTextStyle);
+            cell.setCellStyle(getLabelTextStyle());
         }
+    }
+
+    private CellStyle getLabelTextStyle() {
+        CellStyle labelTextStyle = workBook.createCellStyle();
+        Font labelTextFont = workBook.createFont();
+        labelTextFont.setBold(true);
+        labelTextFont.setColor(IndexedColors.BLACK.index);
+
+        labelTextStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
+        labelTextStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        labelTextStyle.setFont(labelTextFont);
+        labelTextStyle.setAlignment(HorizontalAlignment.CENTER);
+        return labelTextStyle;
     }
 
     private void writeDetailLine(List<String> cellValues, int rowIndex, Sheet sheet) {
@@ -251,9 +180,22 @@ class ExcelWorkbook {
         for(String cellValue : cellValues){
             Cell cell = row.createCell(cellIndex++);
             cell.setCellValue(cellValue);
-            cell.setCellStyle(totalTextStyle);
+            cell.setCellStyle(getTotalTextStyle());
         }
     }
+
+    private CellStyle getTotalTextStyle() {
+        CellStyle totalTextStyle = workBook.createCellStyle();
+        Font totalTextFont = workBook.createFont();
+        totalTextFont.setBold(true);
+        totalTextFont.setColor(IndexedColors.BLACK.index);
+        totalTextStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
+        totalTextStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        totalTextStyle.setAlignment(HorizontalAlignment.RIGHT);
+        totalTextStyle.setFont(totalTextFont);
+        return totalTextStyle;
+    }
+
     private void errorOnUnknownRecordType(List<String> cellValues) throws IOException {
        throw new IOException(".xlsx conversion failed, This record has unknown type:" + System.getProperty("line.separator")
                    + cellValues.get(0));
