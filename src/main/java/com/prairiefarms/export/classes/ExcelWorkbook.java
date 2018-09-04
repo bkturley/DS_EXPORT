@@ -93,6 +93,7 @@ class ExcelWorkbook {
             workBook.write(newXLSXfile);
 
             newXLSXfile.close();
+            autoSizeColumns(workBook);
             workBook.close();
 
             new File(configuration.getProperty("workingDirectory") + xlsxFile.trim());
@@ -244,7 +245,6 @@ class ExcelWorkbook {
         }
     }
 
-
     private void writeFooterLine(List<String> cellValues, int rowIndex, Sheet sheet) {
         Row row = sheet.createRow(rowIndex);
         int cellIndex = 0;
@@ -319,5 +319,21 @@ class ExcelWorkbook {
         }
 
         return returnMe;
+    }
+
+    public void autoSizeColumns(Workbook workbook) {
+        int numberOfSheets = workbook.getNumberOfSheets();
+        for (int i = 0; i < numberOfSheets; i++) {
+            Sheet sheet = workbook.getSheetAt(i);
+            if (sheet.getPhysicalNumberOfRows() > 0) {
+                Row row = sheet.getRow(0);
+                Iterator<Cell> cellIterator = row.cellIterator();
+                while (cellIterator.hasNext()) {
+                    Cell cell = cellIterator.next();
+                    int columnIndex = cell.getColumnIndex();
+                    sheet.autoSizeColumn(columnIndex);
+                }
+            }
+        }
     }
 }
