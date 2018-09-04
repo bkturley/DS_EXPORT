@@ -1,10 +1,6 @@
 package com.prairiefarms.export.classes;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 import com.prairiefarms.export.types.*;
@@ -18,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 class ExcelWorkbook {
 
+    public static final String UNKNOWN = "unknown";
     private Configuration configuration = new Configuration();
 
     private CellStyle headerTextStyle;
@@ -46,6 +43,10 @@ class ExcelWorkbook {
         writeReportLines(getReportData(fileName));
     }
 
+    public String getFileName() {
+        return fileName;
+    }
+
     private Map<List<String>, String> getReportData(String fileName) throws IOException {
         return getWriteableData(getTextFileLines(fileName), getReport(fileName));
     }
@@ -61,9 +62,9 @@ class ExcelWorkbook {
             boolean doneWritingHeaders = false;
             for (Map.Entry<List<String>, String> lineWithType : linesWithType.entrySet()) {
                 List<String> cellValues = lineWithType.getKey();
-                String lintType = lineWithType.getValue();
+                String lineType = lineWithType.getValue();
 
-                switch (lintType) {
+                switch (lineType) {
                     case "header":
                         if(!doneWritingHeaders){
                             writeHeaderLine(cellValues, rowIndex++, sheet);
@@ -76,9 +77,12 @@ class ExcelWorkbook {
                         doneWritingHeaders = true;
                         writeDetailLine(cellValues, rowIndex++, sheet);
                         break;
-//                    case "footer":
-//                        writeFooterLine(cellValues, rowIndex++, sheet);
-//                        break;
+                    case "footer":
+                        writeFooterLine(cellValues, rowIndex++, sheet);
+                        break;
+                    case UNKNOWN: //fallthrough To default
+                    default:
+                        errorOnUnknownRecordType(cellValues);
                 }
             }
 
@@ -195,67 +199,6 @@ class ExcelWorkbook {
         return returnME;
     }
 
-    private String determineTextFileLineRowType(String textLine, Report report) {
-        String returnMe = "unknown";
-        if (!textLine.isEmpty()) {
-            for (ReportRow reportRow : report.getReportRows()) {
-                //build list of invalid areas
-                Map<Integer, Integer> invalidPositions = new LinkedHashMap<>();
-                Map<Integer, Integer> validPositions = new LinkedHashMap<>();
-                int startingIndex = 0;
-                for (ReportColumn reportColumn : reportRow.getColumns()) {
-                    int beginCharacterIndex = reportColumn.getPosition()[0] - 1; //rpg starts indexes at 1
-                    int endCharacterIndex = reportColumn.getPosition()[1] - 1; //rpg starts indexes at 1
-                    invalidPositions.put(startingIndex, beginCharacterIndex);
-                    validPositions.put(beginCharacterIndex, endCharacterIndex);
-                    startingIndex = endCharacterIndex + 1;
-                }
-                invalidPositions.put(startingIndex, startingIndex + textLine.substring(startingIndex).length());
-                //test that characters are in position.
-                Boolean positionalMatch = true;
-                for (Map.Entry<Integer, Integer> entry : invalidPositions.entrySet()) {
-                    if (StringUtils.isNotBlank(textLine.substring(entry.getKey(), entry.getValue()))) {
-                        positionalMatch = false;
-                    }
-                }
-
-                // and of correct Type
-                Boolean dataTypesMatch = true;
-                if (positionalMatch) {
-                    for (ReportColumn reportColumn : reportRow.getColumns()) {
-                        String validateMe = textLine.substring(reportColumn.getPosition()[0] - 1, reportColumn.getPosition()[1]);
-                        if (StringUtils.isNotBlank(validateMe)) {
-                            switch (reportColumn.getType()) {
-                                case "integer":
-                                    try {
-                                        Integer.parseInt(validateMe.trim());
-                                    } catch (NumberFormatException numberFormatException) {
-                                        dataTypesMatch = false;
-                                    }
-                                case "double":
-                                    try {
-                                        Float.parseFloat(validateMe.trim());
-                                    } catch (NumberFormatException numberFormatException) {
-                                        dataTypesMatch = false;
-                                    }
-                            }
-                        }
-                    }
-                }
-
-                //match!
-                if (positionalMatch && dataTypesMatch) {
-                    returnMe = reportRow.getName();
-                }
-
-            }
-        } else {
-            returnMe = "blank";
-        }
-
-        return returnMe;
-    }
-
     private List<String> getTextFileLines(String textFileName) throws IOException {
         List<String> textLines = new ArrayList<>();
         String nextLine;
@@ -268,11 +211,6 @@ class ExcelWorkbook {
         fileReader.close();
         return textLines;
     }
-
-    String getFileName() {
-        return fileName;
-    }
-
 
     private void writeHeaderLine(List<String> cellValues, int rowIndex, Sheet sheet) {
         Row row = sheet.createRow(rowIndex);
@@ -315,6 +253,10 @@ class ExcelWorkbook {
             cell.setCellValue(cellValue);
             cell.setCellStyle(totalTextStyle);
         }
+    }
+    private void errorOnUnknownRecordType(List<String> cellValues) throws IOException {
+       throw new IOException(".xlsx conversion failed, This record has unknown type:" + System.getProperty("line.separator")
+                   + cellValues.get(0));
     }
 
     private Map<List<String>, String> getWriteableData(List<String> textLines, Report report) {
@@ -368,16 +310,14 @@ class ExcelWorkbook {
                         }
                     }
 
-                    //match!
-                    if (positionalMatch && dataTypesMatch) {
+                    boolean recordMatchesKnownType = positionalMatch && dataTypesMatch;
+                    if (recordMatchesKnownType) {
                         returnMe.put(fieldValues, reportRow.getName());
                     }
-
                 }
             }
         }
 
         return returnMe;
     }
-
 }

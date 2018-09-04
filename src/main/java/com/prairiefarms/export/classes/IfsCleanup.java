@@ -1,7 +1,4 @@
 package com.prairiefarms.export.classes;
-
-import com.prairiefarms.export.classes.Configuration;
-
 import java.io.File;
 import java.util.List;
 
@@ -18,7 +15,6 @@ public class IfsCleanup {
     }
 
     public void remove(String reportId){
-        //todo:
         List<String> exportFormats = configuration.getList("exportFormats");
         for (String exportFormat : exportFormats){
             File deleteMe = new File(configuration.getProperty("workingDirectory") + reportId + exportFormat);
