@@ -1,18 +1,13 @@
 package com.prairiefarms.export;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.io.File;
 import java.io.IOException;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class ExcelWorkbookTest {
 
@@ -20,29 +15,27 @@ public class ExcelWorkbookTest {
     private ExcelWorkbook testSubject;
 
     private static String fileNameTestInput = "fileNameTestInputValue";
+    @Mock FileLineList mockFileLineList;
     @Mock
     private ReportAccess mockReportAccess;
     @Mock
-    private XSSFWorkbook mockXSSFWorkbook;
+    private WritableData mockWritableData;
     @Mock
-    private Configuration mockConfiguration;
-    @Mock
-    private FileLineList mockFileLineList;
+    private Writer mockWriter;
 
     @Before
     public void setUp() throws IOException {
         MockitoAnnotations.initMocks(this);
         testSubject = new ExcelWorkbook(fileNameTestInput,
+                mockFileLineList,
                 mockReportAccess,
-                mockXSSFWorkbook,
-                mockConfiguration,
-                mockFileLineList);
-        when(mockConfiguration.getProperty("workingDirectory")).thenReturn(MOCK_FILES_LOCATION);
+                mockWritableData,
+                mockWriter);
     }
 
     @Test
     public void getFileName() {
-        assertEquals(fileNameTestInput, testSubject.getFileName());
+        assertEquals(fileNameTestInput + ".xlsx", testSubject.getFileName());
     }
 
 }
