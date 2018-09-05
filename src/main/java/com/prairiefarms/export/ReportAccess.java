@@ -10,11 +10,12 @@ import java.util.List;
 public class ReportAccess {
     private Configuration configuration = new Configuration();
     private ObjectMapper objectMapper = new ObjectMapper();
+    private FileAccess fileAccess = new FileAccess();
 
     public Report getReport(String textFileName) throws IOException {
         Report returnME = null;
-
-        File jsonFile = new File(configuration.getProperty("jsonMaps") + textFileName.trim() + ".json");
+        String jsonName = getJsonName(textFileName);
+        File jsonFile = fileAccess.getFile(configuration.getProperty("jsonMaps") + jsonName.trim() + ".json");
         List<Report> reports = objectMapper.readValue(jsonFile, new TypeReference<List<Report>>() {
         });
 
@@ -26,8 +27,13 @@ public class ReportAccess {
         }
 
         if (returnME == null) {
-            throw new IOException("Report Conversion layout with title: " + textFileName + " not found in conversion file: " + textFileName + ".json");
+            throw new IOException("Report Conversion layout with title: " + jsonName + " not found in conversion file: " + jsonName + ".json");
         }
         return returnME;
+    }
+
+    private String getJsonName(String textFileName) {
+        String[] tokens = textFileName.split("\\.");
+        return tokens[tokens.length-2];
     }
 }
