@@ -9,23 +9,25 @@ import java.util.Properties;
 
 public class Configuration {
 
-    private static Properties configuration;
+    private static Properties properties;
 
-    Configuration(){
+    public Configuration(){
+        this(new Properties());
+    }
+
+    Configuration(Properties properties){
         try {
-            if(configuration == null) {
-                configuration = new Properties();
-                configuration.load(new FileInputStream("/java/DS_EXPORT.properties")); //for IBM i
-//                configuration.load(new FileInputStream("D:\\DS_EXPORT.properties"));       // for local developer machine
-            }
+            Configuration.properties = properties;
+//            Configuration.properties.load(new FileInputStream("/java/DS_EXPORT.properties")); //for IBM i
+            Configuration.properties.load(new FileInputStream("D:\\DS_EXPORT.properties"));   // for local developer machine
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    String getProperty(String lookupKey){
+    public String getProperty(String lookupKey){
         String returnMe = "";
-        String lookupResult = configuration.getProperty(lookupKey);
+        String lookupResult = properties.getProperty(lookupKey);
         if(lookupResult != null){
             returnMe = lookupResult;
         }

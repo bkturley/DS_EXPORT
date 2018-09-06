@@ -1,6 +1,8 @@
 package com.prairiefarms.export;
 
 import javax.mail.MessagingException;
+import java.util.Arrays;
+import java.util.List;
 
 public class ExportReportApplication {
 
@@ -17,7 +19,13 @@ public class ExportReportApplication {
     }
 
     public void run(String[] args) throws MessagingException {
-        email.send(args[1], args[2], args[3]);
-        ifsCleanup.remove(args[0]);
+        //todo: validate input.
+        String reportName = args[0];
+        List<String> emailRecipients = Arrays.asList(args[1].trim().split(" "));
+        String emailSubjectLine = args[2];
+        String emailMessageBodyText = args[3];
+
+        email.send(emailRecipients, emailSubjectLine, emailMessageBodyText);
+        ifsCleanup.remove(reportName);
     }
 }

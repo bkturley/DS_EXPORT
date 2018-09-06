@@ -1,5 +1,6 @@
 package com.prairiefarms.export;
 
+import com.prairiefarms.export.factory.ReportFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -17,7 +18,7 @@ public class ExcelWorkbookTest {
     private static String fileNameTestInput = "fileNameTestInputValue";
     @Mock FileLineList mockFileLineList;
     @Mock
-    private ReportAccess mockReportAccess;
+    private ReportFactory mockReportFactory;
     @Mock
     private WritableData mockWritableData;
     @Mock
@@ -28,7 +29,7 @@ public class ExcelWorkbookTest {
         MockitoAnnotations.initMocks(this);
         testSubject = new ExcelWorkbook(fileNameTestInput,
                 mockFileLineList,
-                mockReportAccess,
+                mockReportFactory,
                 mockWritableData,
                 mockWriter);
     }
