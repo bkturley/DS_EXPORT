@@ -109,6 +109,6 @@ public class Email {
     }
 
     private String getXlsxFileAttachment(String fileName) throws IOException {
-        return configuration.getProperty("workingDirectory") + excelWorkbookFactory.newExcelWorkbook(fileName).getFileName();
+        return excelWorkbookFactory.newExcelWorkbook(fileName).getFile().getAbsolutePath();
     }
 }

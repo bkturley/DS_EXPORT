@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import javax.mail.MessagingException;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,7 +44,9 @@ public class EmailTest {
         arrayListState = new ArrayList<>();
         when(mockConfiguration.getProperty("workingDirectory")).thenReturn("workingDirectory/");
         ExcelWorkbook excelWorkbook = mock(ExcelWorkbook.class);
-        when(excelWorkbook.getFileName()).thenReturn(documentNameTestInput + ".xlsx");
+        File file = mock(File.class);
+        when(file.getAbsolutePath()).thenReturn("workingDirectory/" + documentNameTestInput + ".xlsx");
+        when(excelWorkbook.getFile()).thenReturn(file);
         when(mockExcelWorkbookFactory.newExcelWorkbook(documentNameTestInput)).thenReturn(excelWorkbook);
         testSubject = new Email(documentNameTestInput,
                 mockExcelWorkbookFactory,

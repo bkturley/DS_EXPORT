@@ -3,7 +3,7 @@ package com.prairiefarms.export.factory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prairiefarms.export.Configuration;
-import com.prairiefarms.export.Report;
+import com.prairiefarms.export.types.Report;
 
 import java.io.File;
 import java.io.IOException;

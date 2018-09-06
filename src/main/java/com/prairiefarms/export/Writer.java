@@ -3,6 +3,7 @@ package com.prairiefarms.export;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
@@ -13,47 +14,48 @@ public class Writer {
     Configuration configuration = new Configuration();
     Workbook workBook = new XSSFWorkbook();
 
-    public void write(String fileName, Map<Map<String, CellType>, String> linesWithType) throws IOException {
-        if (!linesWithType.isEmpty()) {
-            Sheet sheet = workBook.createSheet("Report");
+    public File write(String fileName, Map<Map<String, CellType>, String> linesWithType) throws IOException {
 
-            int rowIndex = 0;
-            boolean doneWritingHeaders = false;
-            for (Map.Entry<Map<String, CellType>, String> recordWithType : linesWithType.entrySet()) {
-                Map<String, CellType> cellWithType = recordWithType.getKey();
-                String lineType = recordWithType.getValue();
+        Sheet sheet = workBook.createSheet("Report");
+        int rowIndex = 0;
+        boolean doneWritingHeaders = false;
+        for (Map.Entry<Map<String, CellType>, String> recordWithType : linesWithType.entrySet()) {
+            Map<String, CellType> cellWithType = recordWithType.getKey();
+            String lineType = recordWithType.getValue();
 
-                switch (lineType) {
-                    case "header":
-                        if (!doneWritingHeaders) {
-                            writeHeaderLine(cellWithType, rowIndex++, sheet);
-                        }
-                        break;
-                    case "label":
-                        writeLabelLine(cellWithType, rowIndex++, sheet);
-                        break;
-                    case "detail":
-                        doneWritingHeaders = true;
-                        writeDetailLine(cellWithType, rowIndex++, sheet);
-                        break;
-                    case "footer":
-                        writeFooterLine(cellWithType, rowIndex++, sheet);
-                        break;
-                    default:
-                        errorOnUnknownRecordType(cellWithType);
-                }
+            switch (lineType) {
+                case "header":
+                    if (!doneWritingHeaders) {
+                        writeHeaderLine(cellWithType, rowIndex++, sheet);
+                    }
+                    break;
+                case "label":
+                    writeLabelLine(cellWithType, rowIndex++, sheet);
+                    break;
+                case "detail":
+                    doneWritingHeaders = true;
+                    writeDetailLine(cellWithType, rowIndex++, sheet);
+                    break;
+                case "footer":
+                    writeFooterLine(cellWithType, rowIndex++, sheet);
+                    break;
+                default:
+                    errorOnUnknownRecordType(cellWithType);
             }
-
-            String xlsxFile = fileName + ".xlsx";
-
-            FileOutputStream newXLSXfile = new FileOutputStream(configuration.getProperty("workingDirectory") + xlsxFile.trim());
-
-            workBook.write(newXLSXfile);
-
-            newXLSXfile.close();
-            autoSizeColumns(workBook);
-            workBook.close();
         }
+
+        String xlsxFile = fileName + ".xlsx";
+
+        FileOutputStream newXLSXfile = new FileOutputStream(configuration.getProperty("workingDirectory") + xlsxFile.trim());
+
+        workBook.write(newXLSXfile);
+
+        newXLSXfile.close();
+        autoSizeColumns(workBook); // not working
+        workBook.close();
+
+        return new File(configuration.getProperty("workingDirectory") + xlsxFile.trim());
+
     }
 
     private void writeHeaderLine(Map<String, CellType> cellWithType, int rowIndex, Sheet sheet) {

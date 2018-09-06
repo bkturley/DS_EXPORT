@@ -1,6 +1,7 @@
 package com.prairiefarms.export;
 
 import com.prairiefarms.export.factory.ReportFactory;
+import com.prairiefarms.export.types.Report;
 import org.apache.poi.ss.usermodel.CellType;
 
 import java.io.*;
@@ -8,29 +9,28 @@ import java.util.*;
 
 public class ExcelWorkbook {
 
-    private String fileName;
+    File file;
 
     public ExcelWorkbook(String fileName) throws IOException {
         this(fileName,
-                new FileLineList(),
+                new textLineList(),
                 new ReportFactory(),
-                new WritableData(),
+                new mappedReportData(),
                 new Writer());
     }
 
     ExcelWorkbook(String fileName,
-                  FileLineList fileLineList,
+                  textLineList textLineList,
                   ReportFactory reportFactory,
-                  WritableData writableData,
+                  mappedReportData mappedReportData,
                   Writer writer) throws IOException {
-        List<String> linesOfSpoolFile = fileLineList.getLines(fileName);
+        List<String> linesOfSpoolFile = textLineList.getLines(fileName);
         Report reportLayout = reportFactory.getReport(fileName);
-        Map<Map<String, CellType>, String> writableRows = writableData.getWriteableData(linesOfSpoolFile, reportLayout);
-        writer.write(fileName, writableRows);
-        this.fileName = fileName;
+        Map<Map<String, CellType>, String> writableRows = mappedReportData.getWriteableData(linesOfSpoolFile, reportLayout);
+        file = writer.write(fileName, writableRows);
     }
 
-    public String getFileName() {
-        return fileName + ".xlsx";
+    public File getFile() {
+        return file;
     }
 }

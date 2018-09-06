@@ -1,4 +1,4 @@
-package com.prairiefarms.export;
+package com.prairiefarms.export.types;
 
 
 public class ReportColumn {

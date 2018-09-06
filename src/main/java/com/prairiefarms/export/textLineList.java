@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FileLineList {
+public class textLineList {
     Configuration configuration = new Configuration();
     FileFactory fileFactory = new FileFactory();
     public List<String> getLines(String textFileName) throws IOException {

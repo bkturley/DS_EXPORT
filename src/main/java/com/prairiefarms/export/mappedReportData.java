@@ -1,5 +1,8 @@
 package com.prairiefarms.export;
 
+import com.prairiefarms.export.types.Report;
+import com.prairiefarms.export.types.ReportColumn;
+import com.prairiefarms.export.types.ReportRow;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.CellType;
 
@@ -7,7 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class WritableData {
+public class mappedReportData {
 
     public Map<Map<String, CellType>, String> getWriteableData(List<String> textLines, Report report) {
 
@@ -15,8 +18,6 @@ public class WritableData {
         for (String textLine : textLines) {
             if (!textLine.isEmpty()) {
                 for (ReportRow reportRow : report.getReportRows()) {
-
-
 
                     Boolean positionalMatch = isPositionalMatch(textLine, reportRow);
 
