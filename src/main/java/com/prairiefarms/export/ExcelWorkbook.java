@@ -1,6 +1,7 @@
 package com.prairiefarms.export;
 
 import com.prairiefarms.export.factory.ReportFactory;
+import com.prairiefarms.export.factory.products.writeableLine;
 import com.prairiefarms.export.types.Report;
 import org.apache.poi.ss.usermodel.CellType;
 
@@ -24,9 +25,10 @@ public class ExcelWorkbook {
                   ReportFactory reportFactory,
                   mappedReportData mappedReportData,
                   Writer writer) throws IOException {
+
         List<String> linesOfSpoolFile = textLineList.getLines(fileName);
         Report reportLayout = reportFactory.getReport(fileName);
-        Map<Map<String, CellType>, String> writableRows = mappedReportData.getWriteableData(linesOfSpoolFile, reportLayout);
+        List<writeableLine> writableRows = mappedReportData.getWriteableData(linesOfSpoolFile, reportLayout);
         file = writer.write(fileName, writableRows);
     }
 

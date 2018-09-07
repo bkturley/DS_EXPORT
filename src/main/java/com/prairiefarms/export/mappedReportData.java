@@ -1,35 +1,40 @@
 package com.prairiefarms.export;
 
+import com.prairiefarms.export.factory.WritableLineFactory;
+import com.prairiefarms.export.factory.products.writeableLine;
 import com.prairiefarms.export.types.Report;
 import com.prairiefarms.export.types.ReportColumn;
 import com.prairiefarms.export.types.ReportRow;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.poi.ss.usermodel.CellType;
 
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 public class mappedReportData {
 
-    public Map<Map<String, CellType>, String> getWriteableData(List<String> textLines, Report report) {
+    WritableLineFactory writableLineFactory = new WritableLineFactory();
 
-        Map<Map<String, CellType>, String> returnMe = new LinkedHashMap<>();
+    public List<writeableLine> getWriteableData(List<String> textLines, Report report) throws IOException {
+        List<writeableLine> returnMe = new ArrayList<>();
         for (String textLine : textLines) {
             if (!textLine.isEmpty()) {
+                boolean lineTypeWasDetermined = false;
                 for (ReportRow reportRow : report.getReportRows()) {
 
-                    Boolean positionalMatch = isPositionalMatch(textLine, reportRow);
+                    boolean positionalMatch = isPositionalMatch(textLine, reportRow);
 
-                    Boolean dataTypesMatch = true;
+                    boolean dataTypesMatch = true;
                     if (positionalMatch) {
                         dataTypesMatch = isDataTypeMatch(textLine, reportRow);
                     }
 
                     boolean recordMatchesKnownType = positionalMatch && dataTypesMatch;
                     if (recordMatchesKnownType) {
-                        Map<String, CellType> cellWithDataTypeMap = new LinkedHashMap<>();
+                        List<Pair<String, CellType>> cellWithDataTypeList = new ArrayList<>();
                         for (ReportColumn reportColumn : reportRow.getColumns()) {
                             String validateMe;
                             if(!"blank".equals(reportColumn.getType())){
@@ -37,14 +42,18 @@ public class mappedReportData {
                             }else{
                                 validateMe = "";
                             }
-                            cellWithDataTypeMap.put(validateMe, getCellType(reportColumn.getType()));
+                            cellWithDataTypeList.add(new ImmutablePair<>(validateMe, getCellType(reportColumn.getType())));
                         }
-                        returnMe.put(cellWithDataTypeMap, reportRow.getName());
+                        returnMe.add(writableLineFactory.newWritableLine(cellWithDataTypeList, reportRow.getName()));
+                        lineTypeWasDetermined = true;
                     }
+                }
+                if(lineTypeWasDetermined = false){
+                    throw new IOException("This report lines type could not be determined: "
+                            + textLine + "Likely cause is out of date JSON mapping.");
                 }
             }
         }
-
         return returnMe;
     }
 
@@ -61,8 +70,8 @@ public class mappedReportData {
         return returnMe;
     }
 
-    private Boolean isDataTypeMatch(String textLine, ReportRow reportRow) {
-        Boolean dataTypesMatch = true;
+    private boolean isDataTypeMatch(String textLine, ReportRow reportRow) {
+        boolean dataTypesMatch = true;
         for (ReportColumn reportColumn : reportRow.getColumns()) {
             if(!"blank".equals(reportColumn.getType())){
                 String validateMe = textLine.substring(reportColumn.getPosition()[0] - 1, reportColumn.getPosition()[1]);

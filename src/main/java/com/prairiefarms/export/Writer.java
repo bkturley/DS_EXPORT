@@ -1,5 +1,8 @@
 package com.prairiefarms.export;
 
+import com.prairiefarms.export.factory.products.writeableLine;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
@@ -7,6 +10,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 public class Writer {
@@ -14,33 +18,33 @@ public class Writer {
     Configuration configuration = new Configuration();
     Workbook workBook = new XSSFWorkbook();
 
-    public File write(String fileName, Map<Map<String, CellType>, String> linesWithType) throws IOException {
-
+    public File write(String fileName, List<writeableLine> writeableLines) throws IOException {
         Sheet sheet = workBook.createSheet("Report");
         int rowIndex = 0;
         boolean doneWritingHeaders = false;
-        for (Map.Entry<Map<String, CellType>, String> recordWithType : linesWithType.entrySet()) {
-            Map<String, CellType> cellWithType = recordWithType.getKey();
-            String lineType = recordWithType.getValue();
-
-            switch (lineType) {
+        for (writeableLine writeableLine : writeableLines) {
+            List<Pair<String, CellType>> cells = writeableLine.getCells();
+            String recordType = writeableLine.getRecordType();
+            switch (recordType) {
+                case "detail":
+                    doneWritingHeaders = true;
+                    writeDetailLine(cells, rowIndex++, sheet);
+                    break;
                 case "header":
                     if (!doneWritingHeaders) {
-                        writeHeaderLine(cellWithType, rowIndex++, sheet);
+                        writeHeaderLine(cells, rowIndex++, sheet);
                     }
                     break;
                 case "label":
-                    writeLabelLine(cellWithType, rowIndex++, sheet);
-                    break;
-                case "detail":
-                    doneWritingHeaders = true;
-                    writeDetailLine(cellWithType, rowIndex++, sheet);
+                    if (!doneWritingHeaders) {
+                        writeLabelLine(cells, rowIndex++, sheet);
+                    }
                     break;
                 case "footer":
-                    writeFooterLine(cellWithType, rowIndex++, sheet);
+                    writeFooterLine(cells, rowIndex++, sheet);
                     break;
                 default:
-                    errorOnUnknownRecordType(cellWithType);
+                    errorOnUnknownRecordType(cells);
             }
         }
 
@@ -58,11 +62,11 @@ public class Writer {
 
     }
 
-    private void writeHeaderLine(Map<String, CellType> cellWithType, int rowIndex, Sheet sheet) {
+    private void writeHeaderLine(List<Pair<String, CellType>> cellList, int rowIndex, Sheet sheet) {
         Row row = sheet.createRow(rowIndex);
 
         int cellIndex = 0;
-        for (Map.Entry<String, CellType> cellValue : cellWithType.entrySet()) {
+        for (Pair<String, CellType> cellValue : cellList) {
             Cell cell = row.createCell(cellIndex++);
             cell.setCellStyle(getHeaderTextStyle());
             cell.setCellType(cellValue.getValue());
@@ -70,11 +74,11 @@ public class Writer {
         }
     }
 
-    private void writeLabelLine(Map<String, CellType> cellWithType, int rowIndex, Sheet sheet) {
+    private void writeLabelLine(List<Pair<String, CellType>> cellList, int rowIndex, Sheet sheet) {
         Row row = sheet.createRow(rowIndex);
 
         int cellIndex = 0;
-        for (Map.Entry<String, CellType> cellValue : cellWithType.entrySet()) {
+        for (Pair<String, CellType> cellValue : cellList) {
             Cell cell = row.createCell(cellIndex++);
             cell.setCellType(cellValue.getValue());
             cell.setCellStyle(getLabelTextStyle());
@@ -82,10 +86,10 @@ public class Writer {
         }
     }
 
-    private void writeDetailLine(Map<String, CellType> cellWithType, int rowIndex, Sheet sheet) {
+    private void writeDetailLine(List<Pair<String, CellType>> cellList, int rowIndex, Sheet sheet) {
         Row row = sheet.createRow(rowIndex);
         int cellIndex = 0;
-        for (Map.Entry<String, CellType> cellValue : cellWithType.entrySet()) {
+        for (Pair<String, CellType> cellValue : cellList) {
             Cell cell = row.createCell(cellIndex++);
             cell.setCellType(cellValue.getValue());
             //            cell.setCellStyle(getDetailTextStyle());
@@ -93,10 +97,10 @@ public class Writer {
         }
     }
 
-    private void writeFooterLine(Map<String, CellType> cellWithType, int rowIndex, Sheet sheet) {
+    private void writeFooterLine(List<Pair<String, CellType>> cellList, int rowIndex, Sheet sheet) {
         Row row = sheet.createRow(rowIndex);
         int cellIndex = 0;
-        for (Map.Entry<String, CellType> cellValue : cellWithType.entrySet()) {
+        for (Pair<String, CellType> cellValue : cellList) {
             Cell cell = row.createCell(cellIndex++);
             cell.setCellStyle(getTotalTextStyle());
             cell.setCellType(cellValue.getValue());
@@ -139,9 +143,9 @@ public class Writer {
         return totalTextStyle;
     }
 
-    private void errorOnUnknownRecordType(Map<String, CellType> cellWithType) throws IOException {
+    private void errorOnUnknownRecordType(List<Pair<String, CellType>> cellList) throws IOException {
         throw new IOException(".xlsx conversion failed, This record has unknown type:" + System.getProperty("line.separator")
-                + cellWithType.get(0));
+                + cellList.toString());
     }
 
     private void autoSizeColumns(Workbook workbook) {
