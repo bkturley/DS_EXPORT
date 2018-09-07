@@ -1,19 +1,18 @@
 package com.prairiefarms.export.factory.products;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.poi.ss.usermodel.CellType;
 
 import java.util.List;
 
 public class WriteableLine {
-    private List<Pair<String, CellType>> cells;
+    private List<Pair<String, String>> cells;
     private String recordType;
-    public WriteableLine(List<Pair<String, CellType>> cells, String recordType){
+    public WriteableLine(List<Pair<String, String>> cells, String recordType){
         this.cells = cells;
         this.recordType = recordType;
     }
 
-    public List<Pair<String, CellType>> getCells() {
+    public List<Pair<String, String>> getCells() {
         return cells;
     }
 

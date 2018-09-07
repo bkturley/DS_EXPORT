@@ -1,6 +1,7 @@
 package com.prairiefarms.export;
 
 import com.prairiefarms.export.factory.products.WriteableLine;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -16,34 +17,41 @@ class Writer {
     private Workbook workBook = new XSSFWorkbook();
 
     private CellStyle headerCellStyle;
-    private CellStyle labelCellStyle;
-    private CellStyle detailCellStyle;
-    private CellStyle totalCellStyle;
+    private CellStyle columnLabelCellStyle;
+
+    private CellStyle detailStringCellStyle;
+    private CellStyle detailIntegerCellStyle;
+    private CellStyle detailDoubleCellStyle;
+
+
+    private CellStyle totalStringCellStyle;
+
+
 
     File write(String fileName, List<WriteableLine> WriteableLines) throws IOException {
         Sheet sheet = workBook.createSheet("Report");
         int rowIndex = 0;
         boolean doneWritingHeaders = false;
         for (WriteableLine WriteableLine : WriteableLines) {
-            List<Pair<String, CellType>> cells = WriteableLine.getCells();
+            List<Pair<String, String>> cells = WriteableLine.getCells();
             String recordType = WriteableLine.getRecordType();
             switch (recordType) {
                 case "detail":
                     doneWritingHeaders = true;
-                    writeReportLine(cells, rowIndex++, sheet, getDetailCellStyle());
+                    writeReportLine(cells, rowIndex++, sheet);
                     break;
                 case "header":
                     if (!doneWritingHeaders) {
-                        writeReportLine(cells, rowIndex++, sheet, getHeaderTextStyle());
+                        writeReportLine(cells, rowIndex++, sheet);
                     }
                     break;
                 case "label":
                     if (!doneWritingHeaders) {
-                        writeReportLine(cells, rowIndex++, sheet, getLabelCellStyle());
+                        writeReportLine(cells, rowIndex++, sheet);
                     }
                     break;
                 case "footer":
-                    writeReportLine(cells, rowIndex++, sheet, getTotalCellStyle());
+                    writeReportLine(cells, rowIndex++, sheet);
                     break;
                 default:
                     errorOnUnknownRecordType(cells);
@@ -63,26 +71,89 @@ class Writer {
 
     }
 
-    private void writeReportLine(List<Pair<String, CellType>> cellList, int rowIndex, Sheet sheet, CellStyle cellStyle) {
+    private void writeReportLine(List<Pair<String, String>> cellList, int rowIndex, Sheet sheet) {
         Row row = sheet.createRow(rowIndex);
         int cellIndex = 0;
-        for (Pair<String, CellType> cellValue : cellList) {
+        for (Pair<String, String> cellValue : cellList) {
             Cell cell = row.createCell(cellIndex++);
-            cell.setCellStyle(getTotalCellStyle());
-            cell.setCellType(cellValue.getValue());
-            cell.setCellStyle(cellStyle);
-            cell.setCellValue(cellValue.getKey());
+            setCellValue(cell, cellValue);
+            cell.setCellStyle(getCellStyle(cellValue.getRight()));
         }
     }
 
-    private CellStyle getDetailCellStyle() {
-        if(detailCellStyle == null){
-            detailCellStyle = workBook.createCellStyle();
-            Font headerTextFont = workBook.createFont();
-            detailCellStyle.setAlignment(HorizontalAlignment.CENTER);
-            detailCellStyle.setFont(headerTextFont);
+    private void setCellValue(Cell cell, Pair<String, String> cellValue) {
+        switch (cellValue.getRight()){
+            case "integer":
+            case "double":
+                if(StringUtils.isNotBlank(cellValue.getLeft())){
+                    cell.setCellValue(Double.parseDouble(cellValue.getLeft()));
+                }else{
+                    cell.setCellValue("");
+                }
+                break;
+            case "blank":
+                cell.setCellValue("");
+                break;
+            default:
+                cell.setCellValue(cellValue.getLeft());
         }
-        return detailCellStyle;
+    }
+
+
+    private CellType getCellType(String string) {
+        CellType returnMe = null;
+        switch (string){
+            case "string":
+                returnMe = CellType.STRING;
+                break;
+            case "integer":
+            case "double":
+                returnMe = CellType.NUMERIC;
+                break;
+            case "blank":
+                returnMe = CellType.BLANK;
+                break;
+            default:
+                returnMe = CellType.STRING;
+        }
+        return returnMe;
+    }
+
+    private CellStyle getCellStyle(String cellType) {
+        CellStyle returnMe = null;
+        switch (cellType){
+            case "string":
+                returnMe = getDetailStringCellStyle();
+                break;
+            case "integer":
+                returnMe = getDetailIntegerCellStyle();
+                break;
+            case "double":
+                returnMe = getDetailDoubleCellStyle();
+                break;
+            case "blank":
+                returnMe = getDetailBlankCellStyle();
+                break;
+            default:
+                returnMe = getDetailStringCellStyle();
+        }
+        return returnMe;
+    }
+
+
+
+    private CellStyle getDetailBlankCellStyle() {
+        return getDetailStringCellStyle();
+    }
+
+    private CellStyle getDetailStringCellStyle() {
+        if(detailStringCellStyle == null){
+            detailStringCellStyle = workBook.createCellStyle();
+            Font detailTextFont = workBook.createFont();
+            detailStringCellStyle.setAlignment(HorizontalAlignment.CENTER);
+            detailStringCellStyle.setFont(detailTextFont);
+        }
+        return detailStringCellStyle;
     }
 
     private CellStyle getHeaderTextStyle() {
@@ -96,37 +167,57 @@ class Writer {
         return headerCellStyle;
     }
 
-    private CellStyle getLabelCellStyle() {
-        if(labelCellStyle == null){
-            labelCellStyle = workBook.createCellStyle();
+    private CellStyle getColumnLabelCellStyle() {
+        if(columnLabelCellStyle == null){
+            columnLabelCellStyle = workBook.createCellStyle();
             Font labelTextFont = workBook.createFont();
             labelTextFont.setBold(true);
             labelTextFont.setColor(IndexedColors.BLACK.index);
 
-            labelCellStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
-            labelCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            labelCellStyle.setFont(labelTextFont);
-            labelCellStyle.setAlignment(HorizontalAlignment.CENTER);
+            columnLabelCellStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
+            columnLabelCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            columnLabelCellStyle.setFont(labelTextFont);
+            columnLabelCellStyle.setAlignment(HorizontalAlignment.CENTER);
         }
-        return labelCellStyle;
+        return columnLabelCellStyle;
     }
 
-    private CellStyle getTotalCellStyle() {
-        if(totalCellStyle == null){
-            totalCellStyle = workBook.createCellStyle();
+    private CellStyle getTotalStringCellStyle() {
+        if(totalStringCellStyle == null){
+            totalStringCellStyle = workBook.createCellStyle();
             Font totalTextFont = workBook.createFont();
             totalTextFont.setBold(true);
             totalTextFont.setColor(IndexedColors.BLACK.index);
-            totalCellStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
-            totalCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            totalCellStyle.setAlignment(HorizontalAlignment.RIGHT);
-            totalCellStyle.setFont(totalTextFont);
+            totalStringCellStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
+            totalStringCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            totalStringCellStyle.setAlignment(HorizontalAlignment.CENTER);
+            totalStringCellStyle.setFont(totalTextFont);
         }
-        return totalCellStyle;
+        return totalStringCellStyle;
     }
 
-    private void errorOnUnknownRecordType(List<Pair<String, CellType>> cellList) throws IOException {
+    private void errorOnUnknownRecordType(List<Pair<String, String>> cellList) throws IOException {
         throw new IOException(".xlsx conversion failed, This record has unknown type:" + System.getProperty("line.separator")
                 + cellList.toString());
+    }
+
+    public CellStyle getDetailIntegerCellStyle() {
+        if(detailIntegerCellStyle == null){
+            DataFormat integerFormat = workBook.createDataFormat();
+            detailIntegerCellStyle = workBook.createCellStyle();
+            detailIntegerCellStyle.setDataFormat(integerFormat.getFormat("_(* #,##0_);[RED]_(* \\(#,##0\\);_(* -??_);_(@_)"));
+            detailIntegerCellStyle.setAlignment(HorizontalAlignment.CENTER);
+        }
+        return detailIntegerCellStyle;
+    }
+
+    private CellStyle getDetailDoubleCellStyle() {
+        if(detailDoubleCellStyle == null){
+            DataFormat doubleFormat = workBook.createDataFormat();
+            detailDoubleCellStyle = workBook.createCellStyle();
+            detailDoubleCellStyle.setDataFormat(doubleFormat.getFormat("_(* #,##0.00_);[RED]_(* \\(#,##0.00\\);_(* -??_);_(@_)"));
+            detailDoubleCellStyle.setAlignment(HorizontalAlignment.CENTER);
+        }
+        return detailDoubleCellStyle;
     }
 }

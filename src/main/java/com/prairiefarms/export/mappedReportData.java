@@ -8,7 +8,6 @@ import com.prairiefarms.export.types.ReportRow;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.poi.ss.usermodel.CellType;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,7 +32,7 @@ public class mappedReportData {
                         }
                         boolean recordMatchesKnownType = positionalMatch && dataTypesMatch;
                         if (recordMatchesKnownType) {
-                            List<Pair<String, CellType>> cellWithDataTypeList = new ArrayList<>();
+                            List<Pair<String, String>> cellWithDataTypeList = new ArrayList<>();
                             for (ReportColumn reportColumn : reportRow.getColumns()) {
                                 String validateMe;
                                 if(!"blank".equals(reportColumn.getType())){
@@ -41,7 +40,7 @@ public class mappedReportData {
                                 }else{
                                     validateMe = "";
                                 }
-                                cellWithDataTypeList.add(new ImmutablePair<>(validateMe, getCellType(reportColumn.getType())));
+                                cellWithDataTypeList.add(new ImmutablePair<>(validateMe, reportColumn.getType()));
                             }
                             returnMe.add(writableLineFactory.newWritableLine(cellWithDataTypeList, reportRow.getName()));
                             lineTypeWasDetermined = true;
@@ -53,25 +52,6 @@ public class mappedReportData {
                             + textLine + "Likely cause is out of date JSON mapping.");
                 }
             }
-        }
-        return returnMe;
-    }
-
-    private CellType getCellType(String type) {
-        CellType returnMe;
-        switch (type){
-            case "string":
-                returnMe = CellType.STRING;
-                break;
-            case "integer":
-            case "double":
-                returnMe = CellType.NUMERIC;
-                break;
-            case "blank":
-                returnMe = CellType.BLANK;
-                break;
-            default:
-                returnMe = CellType.STRING;
         }
         return returnMe;
     }
