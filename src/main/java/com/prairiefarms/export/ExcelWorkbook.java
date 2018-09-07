@@ -1,9 +1,8 @@
 package com.prairiefarms.export;
 
 import com.prairiefarms.export.factory.ReportFactory;
-import com.prairiefarms.export.factory.products.writeableLine;
+import com.prairiefarms.export.factory.products.WriteableLine;
 import com.prairiefarms.export.types.Report;
-import org.apache.poi.ss.usermodel.CellType;
 
 import java.io.*;
 import java.util.*;
@@ -28,7 +27,7 @@ public class ExcelWorkbook {
 
         List<String> linesOfSpoolFile = textLineList.getLines(fileName);
         Report reportLayout = reportFactory.getReport(fileName);
-        List<writeableLine> writableRows = mappedReportData.getWriteableData(linesOfSpoolFile, reportLayout);
+        List<WriteableLine> writableRows = mappedReportData.getWriteableData(linesOfSpoolFile, reportLayout);
         file = writer.write(fileName, writableRows);
     }
 

@@ -5,10 +5,10 @@ import org.apache.poi.ss.usermodel.CellType;
 
 import java.util.List;
 
-public class writeableLine {
+public class WriteableLine {
     private List<Pair<String, CellType>> cells;
     private String recordType;
-    public writeableLine(List<Pair<String, CellType>> cells, String recordType){
+    public WriteableLine(List<Pair<String, CellType>> cells, String recordType){
         this.cells = cells;
         this.recordType = recordType;
     }

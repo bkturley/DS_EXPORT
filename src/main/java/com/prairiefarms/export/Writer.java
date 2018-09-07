@@ -1,7 +1,6 @@
 package com.prairiefarms.export;
 
-import com.prairiefarms.export.factory.products.writeableLine;
-import org.apache.commons.lang3.tuple.ImmutablePair;
+import com.prairiefarms.export.factory.products.WriteableLine;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -9,39 +8,42 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
-public class Writer {
+class Writer {
 
-    Configuration configuration = new Configuration();
-    Workbook workBook = new XSSFWorkbook();
+    private Configuration configuration = new Configuration();
+    private Workbook workBook = new XSSFWorkbook();
 
-    public File write(String fileName, List<writeableLine> writeableLines) throws IOException {
+    private CellStyle headerCellStyle;
+    private CellStyle labelCellStyle;
+    private CellStyle detailCellStyle;
+    private CellStyle totalCellStyle;
+
+    File write(String fileName, List<WriteableLine> WriteableLines) throws IOException {
         Sheet sheet = workBook.createSheet("Report");
         int rowIndex = 0;
         boolean doneWritingHeaders = false;
-        for (writeableLine writeableLine : writeableLines) {
-            List<Pair<String, CellType>> cells = writeableLine.getCells();
-            String recordType = writeableLine.getRecordType();
+        for (WriteableLine WriteableLine : WriteableLines) {
+            List<Pair<String, CellType>> cells = WriteableLine.getCells();
+            String recordType = WriteableLine.getRecordType();
             switch (recordType) {
                 case "detail":
                     doneWritingHeaders = true;
-                    writeDetailLine(cells, rowIndex++, sheet);
+                    writeReportLine(cells, rowIndex++, sheet, getDetailCellStyle());
                     break;
                 case "header":
                     if (!doneWritingHeaders) {
-                        writeHeaderLine(cells, rowIndex++, sheet);
+                        writeReportLine(cells, rowIndex++, sheet, getHeaderTextStyle());
                     }
                     break;
                 case "label":
                     if (!doneWritingHeaders) {
-                        writeLabelLine(cells, rowIndex++, sheet);
+                        writeReportLine(cells, rowIndex++, sheet, getLabelCellStyle());
                     }
                     break;
                 case "footer":
-                    writeFooterLine(cells, rowIndex++, sheet);
+                    writeReportLine(cells, rowIndex++, sheet, getTotalCellStyle());
                     break;
                 default:
                     errorOnUnknownRecordType(cells);
@@ -55,112 +57,76 @@ public class Writer {
         workBook.write(newXLSXfile);
 
         newXLSXfile.close();
-        autoSizeColumns(workBook); // not working
         workBook.close();
 
         return new File(configuration.getProperty("workingDirectory") + xlsxFile.trim());
 
     }
 
-    private void writeHeaderLine(List<Pair<String, CellType>> cellList, int rowIndex, Sheet sheet) {
+    private void writeReportLine(List<Pair<String, CellType>> cellList, int rowIndex, Sheet sheet, CellStyle cellStyle) {
         Row row = sheet.createRow(rowIndex);
-
         int cellIndex = 0;
         for (Pair<String, CellType> cellValue : cellList) {
             Cell cell = row.createCell(cellIndex++);
-            cell.setCellStyle(getHeaderTextStyle());
+            cell.setCellStyle(getTotalCellStyle());
             cell.setCellType(cellValue.getValue());
+            cell.setCellStyle(cellStyle);
             cell.setCellValue(cellValue.getKey());
         }
     }
 
-    private void writeLabelLine(List<Pair<String, CellType>> cellList, int rowIndex, Sheet sheet) {
-        Row row = sheet.createRow(rowIndex);
-
-        int cellIndex = 0;
-        for (Pair<String, CellType> cellValue : cellList) {
-            Cell cell = row.createCell(cellIndex++);
-            cell.setCellType(cellValue.getValue());
-            cell.setCellStyle(getLabelTextStyle());
-            cell.setCellValue(cellValue.getKey());
+    private CellStyle getDetailCellStyle() {
+        if(detailCellStyle == null){
+            detailCellStyle = workBook.createCellStyle();
+            Font headerTextFont = workBook.createFont();
+            detailCellStyle.setAlignment(HorizontalAlignment.CENTER);
+            detailCellStyle.setFont(headerTextFont);
         }
-    }
-
-    private void writeDetailLine(List<Pair<String, CellType>> cellList, int rowIndex, Sheet sheet) {
-        Row row = sheet.createRow(rowIndex);
-        int cellIndex = 0;
-        for (Pair<String, CellType> cellValue : cellList) {
-            Cell cell = row.createCell(cellIndex++);
-            cell.setCellType(cellValue.getValue());
-            //            cell.setCellStyle(getDetailTextStyle());
-            cell.setCellValue(cellValue.getKey());
-        }
-    }
-
-    private void writeFooterLine(List<Pair<String, CellType>> cellList, int rowIndex, Sheet sheet) {
-        Row row = sheet.createRow(rowIndex);
-        int cellIndex = 0;
-        for (Pair<String, CellType> cellValue : cellList) {
-            Cell cell = row.createCell(cellIndex++);
-            cell.setCellStyle(getTotalTextStyle());
-            cell.setCellType(cellValue.getValue());
-            cell.setCellValue(cellValue.getKey());
-        }
+        return detailCellStyle;
     }
 
     private CellStyle getHeaderTextStyle() {
-        CellStyle headerTextStyle;
-        headerTextStyle = workBook.createCellStyle();
-        Font headerTextFont = workBook.createFont();
-        headerTextFont.setBold(true);
-        headerTextStyle.setAlignment(HorizontalAlignment.LEFT);
-        headerTextStyle.setFont(headerTextFont);
-        return headerTextStyle;
+        if (headerCellStyle == null) {
+            headerCellStyle = workBook.createCellStyle();
+            Font headerTextFont = workBook.createFont();
+            headerTextFont.setBold(true);
+            headerCellStyle.setAlignment(HorizontalAlignment.CENTER);
+            headerCellStyle.setFont(headerTextFont);
+        }
+        return headerCellStyle;
     }
 
-    private CellStyle getLabelTextStyle() {
-        CellStyle labelTextStyle = workBook.createCellStyle();
-        Font labelTextFont = workBook.createFont();
-        labelTextFont.setBold(true);
-        labelTextFont.setColor(IndexedColors.BLACK.index);
+    private CellStyle getLabelCellStyle() {
+        if(labelCellStyle == null){
+            labelCellStyle = workBook.createCellStyle();
+            Font labelTextFont = workBook.createFont();
+            labelTextFont.setBold(true);
+            labelTextFont.setColor(IndexedColors.BLACK.index);
 
-        labelTextStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
-        labelTextStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        labelTextStyle.setFont(labelTextFont);
-        labelTextStyle.setAlignment(HorizontalAlignment.CENTER);
-        return labelTextStyle;
+            labelCellStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
+            labelCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            labelCellStyle.setFont(labelTextFont);
+            labelCellStyle.setAlignment(HorizontalAlignment.CENTER);
+        }
+        return labelCellStyle;
     }
 
-    private CellStyle getTotalTextStyle() {
-        CellStyle totalTextStyle = workBook.createCellStyle();
-        Font totalTextFont = workBook.createFont();
-        totalTextFont.setBold(true);
-        totalTextFont.setColor(IndexedColors.BLACK.index);
-        totalTextStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
-        totalTextStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        totalTextStyle.setAlignment(HorizontalAlignment.RIGHT);
-        totalTextStyle.setFont(totalTextFont);
-        return totalTextStyle;
+    private CellStyle getTotalCellStyle() {
+        if(totalCellStyle == null){
+            totalCellStyle = workBook.createCellStyle();
+            Font totalTextFont = workBook.createFont();
+            totalTextFont.setBold(true);
+            totalTextFont.setColor(IndexedColors.BLACK.index);
+            totalCellStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
+            totalCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            totalCellStyle.setAlignment(HorizontalAlignment.RIGHT);
+            totalCellStyle.setFont(totalTextFont);
+        }
+        return totalCellStyle;
     }
 
     private void errorOnUnknownRecordType(List<Pair<String, CellType>> cellList) throws IOException {
         throw new IOException(".xlsx conversion failed, This record has unknown type:" + System.getProperty("line.separator")
                 + cellList.toString());
-    }
-
-    private void autoSizeColumns(Workbook workbook) {
-        int numberOfSheets = workbook.getNumberOfSheets();
-        for (int i = 0; i < numberOfSheets; i++) {
-            Sheet sheet = workbook.getSheetAt(i);
-            if (sheet.getPhysicalNumberOfRows() > 0) {
-                Row row = sheet.getRow(0);
-                Iterator<Cell> cellIterator = row.cellIterator();
-                while (cellIterator.hasNext()) {
-                    Cell cell = cellIterator.next();
-                    int columnIndex = cell.getColumnIndex();
-                    sheet.autoSizeColumn(columnIndex);
-                }
-            }
-        }
     }
 }
