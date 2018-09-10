@@ -3,6 +3,7 @@ package com.prairiefarms.export.factory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prairiefarms.export.Configuration;
+import com.prairiefarms.export.access.FileAccess;
 import com.prairiefarms.export.types.Report;
 
 import java.io.File;
@@ -12,12 +13,12 @@ import java.util.List;
 public class ReportFactory {
     private Configuration configuration = new Configuration();
     private ObjectMapper objectMapper = new ObjectMapper();
-    private FileFactory fileFactory = new FileFactory();
+    private FileAccess fileAccess = new FileAccess();
 
     public Report getReport(String textFileName) throws IOException {
         Report returnME = null;
         String jsonName = getJsonName(textFileName);
-        File jsonFile = fileFactory.getFile(configuration.getProperty("jsonMaps") + jsonName.trim() + ".json");
+        File jsonFile = fileAccess.getFile(configuration.getProperty("jsonMaps") + jsonName.trim() + ".json");
         List<Report> reports = objectMapper.readValue(jsonFile, new TypeReference<List<Report>>() {
         });
 

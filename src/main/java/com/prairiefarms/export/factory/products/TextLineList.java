@@ -1,6 +1,7 @@
-package com.prairiefarms.export;
+package com.prairiefarms.export.factory.products;
 
-import com.prairiefarms.export.factory.FileFactory;
+import com.prairiefarms.export.Configuration;
+import com.prairiefarms.export.access.FileAccess;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -9,13 +10,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class textLineList {
+public class TextLineList {
     Configuration configuration = new Configuration();
-    FileFactory fileFactory = new FileFactory();
+    FileAccess fileAccess = new FileAccess();
     public List<String> getLines(String textFileName) throws IOException {
         List<String> textLines = new ArrayList<>();
         String nextLine;
-        File textFile = fileFactory.getFile(configuration.getProperty("workingDirectory") + textFileName.trim() + ".txt");
+        File textFile = fileAccess.getFile(configuration.getProperty("workingDirectory") + textFileName.trim() + ".txt");
         FileReader fileReader = new FileReader(textFile);
         BufferedReader bufferedReader = new BufferedReader(fileReader);
         while ((nextLine = bufferedReader.readLine()) != null) {

@@ -1,6 +1,5 @@
 package com.prairiefarms.export;
 
-import com.prairiefarms.export.factory.ExcelWorkbookFactory;
 import com.prairiefarms.export.factory.MimeMessageFactory;
 
 import java.io.IOException;
@@ -23,7 +22,7 @@ public class Email {
 
     private String xlsxError = "";
 
-    private ExcelWorkbookFactory excelWorkbookFactory;
+    private ExcelWorkbookFileFactory excelWorkbookFactory;
     private Configuration configuration;
     private ArrayList<String> attachments;
     private MimeMessageFactory mimeMessageFactory;
@@ -33,14 +32,14 @@ public class Email {
 
     public Email(String documentName){
         this(documentName,
-                new ExcelWorkbookFactory(),
+                new ExcelWorkbookFileFactory(),
                 new Configuration(),
                 new ArrayList<String>(),
                 new MimeMessageFactory());
     }
 
     public Email(String documentName,
-                 ExcelWorkbookFactory excelWorkbookFactory,
+                 ExcelWorkbookFileFactory excelWorkbookFactory,
                  Configuration configuration,
                  ArrayList<String> attachments,
                  MimeMessageFactory mimeMessageFactory){
@@ -109,6 +108,6 @@ public class Email {
     }
 
     private String getXlsxFileAttachment(String fileName) throws IOException {
-        return excelWorkbookFactory.newExcelWorkbook(fileName).getFile().getAbsolutePath();
+        return excelWorkbookFactory.newExcelWorkbookFile(fileName).getAbsolutePath();
     }
 }

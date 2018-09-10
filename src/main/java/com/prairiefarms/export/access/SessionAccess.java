@@ -1,4 +1,4 @@
-package com.prairiefarms.export.factory;
+package com.prairiefarms.export.access;
 
 import com.prairiefarms.export.Configuration;
 
@@ -6,7 +6,7 @@ import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
 import java.util.Properties;
 
-public class SessionFactory {
+public class SessionAccess {
     Configuration configuration = new Configuration();
     public Session getSession(){
         Properties props = new Properties();

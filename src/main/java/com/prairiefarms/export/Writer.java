@@ -1,11 +1,13 @@
 package com.prairiefarms.export;
 
+import com.prairiefarms.export.access.WorkbookAccess;
 import com.prairiefarms.export.factory.CellStyleFactory;
+import com.prairiefarms.export.factory.WriteableReportDataFactory;
 import com.prairiefarms.export.factory.products.WriteableLine;
+import com.prairiefarms.export.factory.products.WriteableReportData;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -14,15 +16,33 @@ import java.util.List;
 
 class Writer {
 
-    private Configuration configuration = new Configuration();
-    private Workbook workBook = new XSSFWorkbook();
-    private CellStyleFactory cellStyleFactory = new CellStyleFactory(workBook);
 
-    public File write(String fileName, List<WriteableLine> writeableLines) throws IOException {
-        Sheet sheet = workBook.createSheet("Report");
+    private Configuration configuration;
+    private WorkbookAccess workbookAccess;
+    private CellStyleFactory cellStyleFactory;
+    private WriteableReportDataFactory writeableReportDataFactory;
+
+    public Writer(){
+        this(new Configuration(), new WorkbookAccess(), new CellStyleFactory(), new WriteableReportDataFactory());
+    }
+
+    Writer(Configuration configuration,
+           WorkbookAccess workbook,
+           CellStyleFactory cellStyleFactory,
+           WriteableReportDataFactory writeableReportDataFactory){
+        this.configuration = configuration;
+        this.workbookAccess = workbook;
+        this.cellStyleFactory = cellStyleFactory;
+        this.writeableReportDataFactory = writeableReportDataFactory;
+    }
+
+
+    public File write(String fileName) throws IOException {
+        Sheet sheet = workbookAccess.getInstance().createSheet("Report");
         int rowIndex = 0;
         boolean doneWritingHeaders = false;
-        for (WriteableLine WriteableLine : writeableLines) {
+        WriteableReportData writeableLines = writeableReportDataFactory.newWriteableReportData(fileName);
+        for (WriteableLine WriteableLine : writeableLines.getData()) {
             List<Pair<String, String>> cells = WriteableLine.getCells();
             switch (WriteableLine.getRecordType()) {
                 case "detail":
@@ -44,9 +64,9 @@ class Writer {
         String newXlsxFilePath = configuration.getProperty("workingDirectory") + fileName + ".xlsx";
 
         FileOutputStream newXLSXfile = new FileOutputStream(newXlsxFilePath);
-        workBook.write(newXLSXfile);
+        workbookAccess.getInstance().write(newXLSXfile);
         newXLSXfile.close();
-        workBook.close();
+        workbookAccess.getInstance().close();
 
         return new File(newXlsxFilePath);
 

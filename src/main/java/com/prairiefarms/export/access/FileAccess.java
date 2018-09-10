@@ -1,8 +1,8 @@
-package com.prairiefarms.export.factory;
+package com.prairiefarms.export.access;
 
 import java.io.File;
 
-public class FileFactory {
+public class FileAccess {
     public File getFile(String filePath){
         return new File(filePath);
     }

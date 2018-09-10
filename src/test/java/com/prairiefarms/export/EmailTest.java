@@ -1,6 +1,5 @@
 package com.prairiefarms.export;
 
-import com.prairiefarms.export.factory.ExcelWorkbookFactory;
 import com.prairiefarms.export.factory.MimeMessageFactory;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,7 +24,7 @@ public class EmailTest {
     //testSubject internal State
     private static String documentNameTestInput = "documentNameTestInput";
     @Mock
-    private ExcelWorkbookFactory mockExcelWorkbookFactory;
+    private ExcelWorkbookFileFactory mockExcelWorkbookFactory;
     @Mock
     private Configuration mockConfiguration;
     private ArrayList<String> arrayListState;
@@ -43,11 +42,9 @@ public class EmailTest {
         MockitoAnnotations.initMocks(this);
         arrayListState = new ArrayList<>();
         when(mockConfiguration.getProperty("workingDirectory")).thenReturn("workingDirectory/");
-        ExcelWorkbook excelWorkbook = mock(ExcelWorkbook.class);
         File file = mock(File.class);
         when(file.getAbsolutePath()).thenReturn("workingDirectory/" + documentNameTestInput + ".xlsx");
-        when(excelWorkbook.getFile()).thenReturn(file);
-        when(mockExcelWorkbookFactory.newExcelWorkbook(documentNameTestInput)).thenReturn(excelWorkbook);
+        when(mockExcelWorkbookFactory.newExcelWorkbookFile(documentNameTestInput)).thenReturn(file);
         testSubject = new Email(documentNameTestInput,
                 mockExcelWorkbookFactory,
                 mockConfiguration,
@@ -74,7 +71,7 @@ public class EmailTest {
 
     @Test
     public void testSendOmitsXlsxAttachmentOnError() throws MessagingException, IOException {
-        when(mockExcelWorkbookFactory.newExcelWorkbook(documentNameTestInput)).thenThrow(new RuntimeException());
+        when(mockExcelWorkbookFactory.newExcelWorkbookFile(documentNameTestInput)).thenThrow(new RuntimeException());
         arrayListState = new ArrayList<>();
         testSubject = new Email(documentNameTestInput,
                 mockExcelWorkbookFactory,

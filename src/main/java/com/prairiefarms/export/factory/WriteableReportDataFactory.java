@@ -1,7 +1,7 @@
-package com.prairiefarms.export;
+package com.prairiefarms.export.factory;
 
-import com.prairiefarms.export.factory.WritableLineFactory;
-import com.prairiefarms.export.factory.products.WriteableLine;
+import com.prairiefarms.export.factory.products.WriteableReportData;
+import com.prairiefarms.export.factory.products.TextLineList;
 import com.prairiefarms.export.types.Report;
 import com.prairiefarms.export.types.ReportColumn;
 import com.prairiefarms.export.types.ReportRow;
@@ -13,15 +13,30 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class mappedReportData {
+public class WriteableReportDataFactory {
 
-    WritableLineFactory writableLineFactory = new WritableLineFactory();
+    WritableLineFactory writableLineFactory;
+    ReportFactory reportFactory;
+    TextLineList textLineList;
 
-    public List<WriteableLine> getWriteableData(List<String> textLines, Report report) throws IOException {
-        List<WriteableLine> returnMe = new ArrayList<>();
+    public WriteableReportDataFactory(){
+        this(new WritableLineFactory(), new ReportFactory(), new TextLineList());
+    }
+
+    WriteableReportDataFactory(WritableLineFactory writableLineFactory, ReportFactory reportFactory, TextLineList textLineList){
+        this.writableLineFactory = writableLineFactory;
+        this.reportFactory = reportFactory;
+        this.textLineList = textLineList;
+    }
+
+
+    public WriteableReportData newWriteableReportData(String fileName) throws IOException {
+        WriteableReportData returnMe = new WriteableReportData();
+        List<String> textLines = textLineList.getLines(fileName);
         for (String textLine : textLines) {
             if (!textLine.isEmpty()) {
                 boolean lineTypeWasDetermined = false;
+                Report report = reportFactory.getReport(fileName);
                 for (ReportRow reportRow : report.getReportRows()) {
                     if(!lineTypeWasDetermined){
                         boolean positionalMatch = isPositionalMatch(textLine, reportRow);
@@ -42,7 +57,7 @@ public class mappedReportData {
                                 }
                                 cellWithDataTypeList.add(new ImmutablePair<>(validateMe, reportColumn.getType()));
                             }
-                            returnMe.add(writableLineFactory.newWritableLine(cellWithDataTypeList, reportRow.getName()));
+                            returnMe.getData().add(writableLineFactory.newWritableLine(cellWithDataTypeList, reportRow.getName()));
                             lineTypeWasDetermined = true;
                         }
                     }
