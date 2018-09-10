@@ -6,4 +6,8 @@ public class FileAccess {
     public File getFile(String filePath){
         return new File(filePath);
     }
+
+    public void deleteFile(String filePath){
+        getFile(filePath).delete();
+    }
 }

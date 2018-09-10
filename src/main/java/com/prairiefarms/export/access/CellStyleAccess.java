@@ -1,12 +1,11 @@
-package com.prairiefarms.export.factory;
+package com.prairiefarms.export.access;
 
-import com.prairiefarms.export.access.WorkbookAccess;
 import org.apache.poi.ss.usermodel.*;
 
-public class CellStyleFactory {
+public class CellStyleAccess {
 
     private WorkbookAccess workbookAccess = new WorkbookAccess();
-    Workbook workbook;
+    private Workbook workbook;
 
     private CellStyle headerCellStyle;
     private CellStyle columnLabelCellStyle;
@@ -18,12 +17,12 @@ public class CellStyleFactory {
 
     private CellStyle totalStringCellStyle;
 
-    public CellStyleFactory(){
+    public CellStyleAccess(){
         workbook = workbookAccess.getInstance();
     }
 
     public CellStyle newCellStyle(String cellType) {
-        CellStyle returnMe = null;
+        CellStyle returnMe;
         switch (cellType){
             case "string":
                 returnMe = getDetailStringCellStyle();

@@ -13,8 +13,8 @@ import java.util.Date;
 import java.util.List;
 
 public class MimeMessageFactory {
-    SessionAccess sessionAccess = new SessionAccess();
-    Configuration configuration = new Configuration();
+    private SessionAccess sessionAccess = new SessionAccess();
+    private Configuration configuration = new Configuration();
     public void newMimeMessage(List<String> addresses, String subjectLine, Multipart messageContent) throws MessagingException {
         MimeMessage message = new MimeMessage(sessionAccess.getSession());
 

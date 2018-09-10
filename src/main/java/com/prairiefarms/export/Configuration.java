@@ -34,7 +34,7 @@ public class Configuration {
         return returnMe;
     }
 
-    List getList(String lookupKey){
+    List<String> getList(String lookupKey){
         List returnMe = new ArrayList();
 
         String[] lookupResult = getProperty(lookupKey).split(" ");

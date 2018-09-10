@@ -1,7 +1,10 @@
 package com.prairiefarms.export;
 
+import com.prairiefarms.export.access.FileAccess;
+import com.prairiefarms.export.factory.ExcelWorkbookFileFactory;
 import com.prairiefarms.export.factory.MimeMessageFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -16,52 +19,46 @@ import javax.mail.Multipart;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMultipart;
 
-
-
-public class Email {
+class Email {
 
     private String xlsxError = "";
 
     private ExcelWorkbookFileFactory excelWorkbookFactory;
     private Configuration configuration;
-    private ArrayList<String> attachments;
+    private List<String> attachmentPaths;
     private MimeMessageFactory mimeMessageFactory;
+    private FileAccess fileAccess;
 
     private Multipart multipart = new MimeMultipart();
-
 
     public Email(String documentName){
         this(documentName,
                 new ExcelWorkbookFileFactory(),
                 new Configuration(),
                 new ArrayList<String>(),
-                new MimeMessageFactory());
+                new MimeMessageFactory(),
+                new FileAccess());
     }
 
     public Email(String documentName,
                  ExcelWorkbookFileFactory excelWorkbookFactory,
                  Configuration configuration,
-                 ArrayList<String> attachments,
-                 MimeMessageFactory mimeMessageFactory){
+                 List<String> attachmentPaths,
+                 MimeMessageFactory mimeMessageFactory,
+                 FileAccess fileAccess){
         this.excelWorkbookFactory = excelWorkbookFactory;
         this.configuration = configuration;
-        this.attachments = attachments;
+        this.attachmentPaths = attachmentPaths;
         this.mimeMessageFactory = mimeMessageFactory;
-
-        this.attachments.add(getTxtFileAttachment(documentName));
-        this.attachments.add(getPdfFileAttachment(documentName));
-        try {
-            this.attachments.add(getXlsxFileAttachment(documentName));
-        }catch (java.lang.Exception e){
-            StringWriter sw = new StringWriter();
-            e.printStackTrace(new PrintWriter(sw));
-            xlsxError = "Problem converting to Xlsx format. Technical details: <br>" + sw.toString();
-        }
+        this.fileAccess = fileAccess;
+        this.attachmentPaths.addAll(getAttachment(documentName));
     }
 
-    public List<String> send(List<String> toAddresses, String subjectLine, String messageBodyText) throws MessagingException {
+    public void send(List<String> toAddresses, String subjectLine, String messageBodyText) throws MessagingException {
         mimeMessageFactory.newMimeMessage(toAddresses, subjectLine, getMessageContent(messageBodyText));
-        return attachments;
+        for(String filePath : attachmentPaths){
+            fileAccess.deleteFile(filePath);
+        }
     }
 
     Multipart getMessageContent(String messageBodyText) throws MessagingException {
@@ -76,39 +73,50 @@ public class Email {
                 + "<br><br>"
                 + configuration.getProperty("disclaimer"), "text/html");
 
+
         multipart.addBodyPart(messageBodyPart);
 
-        for (String anAttachment : attachments) {
+        for (String anAttachment : attachmentPaths) {
             if (anAttachment != null) {
                 BodyPart attachmentBodyPart = new MimeBodyPart();
-
                 DataSource source = new FileDataSource(anAttachment.trim());
-
                 attachmentBodyPart.setDataHandler(new DataHandler(source));
-
                 attachmentBodyPart.setFileName(source.getName().trim());
-
                 multipart.addBodyPart(attachmentBodyPart);
             }
         }
         return multipart;
     }
 
-    private String getTxtFileAttachment(String fileName){
-        return getFileAsAttachment(fileName, ".txt");
+    private List<String> getAttachment(String documentName) {
+        List<String> returnMe = new ArrayList<>();
+        returnMe.add(getTxtFilePath(documentName));
+        returnMe.add(getPdfFilePath(documentName));
+        try {
+            returnMe.add(getXlsxFilePath(documentName));
+        }catch (java.lang.Exception e){
+            StringWriter sw = new StringWriter();
+            e.printStackTrace(new PrintWriter(sw));
+            xlsxError = "Problem converting to Xlsx format. Technical details: <br>" + sw.toString();
+        }
+        return returnMe;
     }
 
-    private String getPdfFileAttachment(String fileName){
-        return getFileAsAttachment(fileName, ".pdf");
+    private String getTxtFilePath(String fileName){
+        return getAttachmentFile(fileName, ".txt").getAbsolutePath();
     }
 
-    private String getFileAsAttachment(String fileName, String fileExtension){
-        return configuration.getProperty("workingDirectory")
+    private String getPdfFilePath(String fileName){
+        return getAttachmentFile(fileName, ".pdf").getAbsolutePath();
+    }
+
+    private File getAttachmentFile(String fileName, String fileExtension){
+        return fileAccess.getFile(configuration.getProperty("workingDirectory")
                 + fileName
-                + fileExtension;
+                + fileExtension);
     }
 
-    private String getXlsxFileAttachment(String fileName) throws IOException {
+    private String getXlsxFilePath(String fileName) throws IOException {
         return excelWorkbookFactory.newExcelWorkbookFile(fileName).getAbsolutePath();
     }
 }

@@ -7,7 +7,7 @@ import javax.mail.Session;
 import java.util.Properties;
 
 public class SessionAccess {
-    Configuration configuration = new Configuration();
+    private Configuration configuration = new Configuration();
     public Session getSession(){
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");

@@ -10,7 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-public class ReportFactory {
+class ReportFactory {
     private Configuration configuration = new Configuration();
     private ObjectMapper objectMapper = new ObjectMapper();
     private FileAccess fileAccess = new FileAccess();

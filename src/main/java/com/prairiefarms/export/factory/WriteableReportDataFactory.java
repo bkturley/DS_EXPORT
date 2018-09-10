@@ -13,11 +13,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class WriteableReportDataFactory {
+class WriteableReportDataFactory {
 
-    WritableLineFactory writableLineFactory;
-    ReportFactory reportFactory;
-    TextLineList textLineList;
+    private WritableLineFactory writableLineFactory;
+    private ReportFactory reportFactory;
+    private TextLineList textLineList;
 
     public WriteableReportDataFactory(){
         this(new WritableLineFactory(), new ReportFactory(), new TextLineList());
@@ -62,7 +62,7 @@ public class WriteableReportDataFactory {
                         }
                     }
                 }
-                if(lineTypeWasDetermined == false){
+                if(!lineTypeWasDetermined){
                     throw new IOException("This report lines type could not be determined: "
                             + textLine + "Likely cause is out of date JSON mapping.");
                 }

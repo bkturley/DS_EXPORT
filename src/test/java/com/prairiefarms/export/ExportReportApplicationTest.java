@@ -17,8 +17,6 @@ public class ExportReportApplicationTest {
     private ExportReportApplication testSubject;
     @Mock
     private Email mockEmail;
-    @Mock
-    private IfsCleanup mockIfsCleanup;
 
     private static String[] testInput = {"reportNameTestInputValue",
             "recipients Test Input Value",
@@ -29,20 +27,12 @@ public class ExportReportApplicationTest {
     @Before
     public void setup(){
         MockitoAnnotations.initMocks(this);
-        testSubject = new ExportReportApplication(mockEmail, mockIfsCleanup);
+        testSubject = new ExportReportApplication(mockEmail);
     }
 
     @Test
     public void testRunEmailsSpecifiedFile() throws MessagingException {
         testSubject.run(testInput);
         verify(mockEmail).send(toAddressesList, testInput[2], testInput[3]);
-    }
-
-    @Test
-    public void testRunRemovesLeftoverIfsFiles() throws MessagingException {
-        List<String> expectedArrayList = Arrays.asList("txt", "pdf", "xlsx");
-        when(mockEmail.send(toAddressesList, testInput[2], testInput[3])).thenReturn(expectedArrayList);
-        testSubject.run(testInput);
-        verify(mockIfsCleanup).remove(expectedArrayList);
     }
 }

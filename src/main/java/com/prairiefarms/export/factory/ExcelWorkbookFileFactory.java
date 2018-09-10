@@ -1,8 +1,8 @@
-package com.prairiefarms.export;
+package com.prairiefarms.export.factory;
 
+import com.prairiefarms.export.Configuration;
 import com.prairiefarms.export.access.WorkbookAccess;
-import com.prairiefarms.export.factory.CellStyleFactory;
-import com.prairiefarms.export.factory.WriteableReportDataFactory;
+import com.prairiefarms.export.access.CellStyleAccess;
 import com.prairiefarms.export.factory.products.WriteableLine;
 import com.prairiefarms.export.factory.products.WriteableReportData;
 import org.apache.commons.lang3.StringUtils;
@@ -14,25 +14,25 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 
-class ExcelWorkbookFileFactory {
+public class ExcelWorkbookFileFactory {
 
 
     private Configuration configuration;
     private WorkbookAccess workbookAccess;
-    private CellStyleFactory cellStyleFactory;
+    private CellStyleAccess cellStyleAccess;
     private WriteableReportDataFactory writeableReportDataFactory;
 
     public ExcelWorkbookFileFactory(){
-        this(new Configuration(), new WorkbookAccess(), new CellStyleFactory(), new WriteableReportDataFactory());
+        this(new Configuration(), new WorkbookAccess(), new CellStyleAccess(), new WriteableReportDataFactory());
     }
 
     ExcelWorkbookFileFactory(Configuration configuration,
                              WorkbookAccess workbook,
-                             CellStyleFactory cellStyleFactory,
+                             CellStyleAccess cellStyleAccess,
                              WriteableReportDataFactory writeableReportDataFactory){
         this.configuration = configuration;
         this.workbookAccess = workbook;
-        this.cellStyleFactory = cellStyleFactory;
+        this.cellStyleAccess = cellStyleAccess;
         this.writeableReportDataFactory = writeableReportDataFactory;
     }
 
@@ -78,7 +78,7 @@ class ExcelWorkbookFileFactory {
         for (Pair<String, String> cellValue : cellList) {
             Cell cell = row.createCell(cellIndex++);
             setCellValue(cell, cellValue);
-            cell.setCellStyle(cellStyleFactory.newCellStyle(cellValue.getRight()));
+            cell.setCellStyle(cellStyleAccess.newCellStyle(cellValue.getRight()));
         }
     }
 

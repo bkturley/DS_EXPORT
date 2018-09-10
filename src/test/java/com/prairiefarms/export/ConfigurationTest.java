@@ -10,7 +10,7 @@ import static org.junit.Assert.*;
 
 public class ConfigurationTest {
 
-    Configuration testSubject;
+    private Configuration testSubject;
     private Properties properties;
 
     @Before

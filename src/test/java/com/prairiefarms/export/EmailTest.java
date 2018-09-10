@@ -1,5 +1,7 @@
 package com.prairiefarms.export;
 
+import com.prairiefarms.export.access.FileAccess;
+import com.prairiefarms.export.factory.ExcelWorkbookFileFactory;
 import com.prairiefarms.export.factory.MimeMessageFactory;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,6 +32,8 @@ public class EmailTest {
     private ArrayList<String> arrayListState;
     @Mock
     private MimeMessageFactory mockMimeMessageFactory;
+    @Mock
+    private FileAccess mockFileAccess;
 
     //test Input
     private static List<String> addressesTestInput = Arrays.asList("addresses Test Input Value".split(" "));
@@ -38,18 +42,25 @@ public class EmailTest {
 
 
     @Before
-    public void setup() throws MessagingException, IOException {
+    public void setup() throws IOException {
         MockitoAnnotations.initMocks(this);
         arrayListState = new ArrayList<>();
         when(mockConfiguration.getProperty("workingDirectory")).thenReturn("workingDirectory/");
-        File file = mock(File.class);
-        when(file.getAbsolutePath()).thenReturn("workingDirectory/" + documentNameTestInput + ".xlsx");
-        when(mockExcelWorkbookFactory.newExcelWorkbookFile(documentNameTestInput)).thenReturn(file);
+        File xlsxFile = mock(File.class);
+        when(xlsxFile.getAbsolutePath()).thenReturn("workingDirectory/" + documentNameTestInput + ".xlsx");
+        File txtFile = mock(File.class);
+        when(txtFile.getAbsolutePath()).thenReturn("workingDirectory/" + documentNameTestInput + ".txt");
+        File pdfFile = mock(File.class);
+        when(pdfFile.getAbsolutePath()).thenReturn("workingDirectory/" + documentNameTestInput + ".pdf");
+        when(mockFileAccess.getFile("workingDirectory/" + documentNameTestInput + ".txt")).thenReturn(txtFile);
+        when(mockFileAccess.getFile("workingDirectory/" + documentNameTestInput + ".pdf")).thenReturn(pdfFile);
+        when(mockExcelWorkbookFactory.newExcelWorkbookFile(documentNameTestInput)).thenReturn(xlsxFile);
         testSubject = new Email(documentNameTestInput,
                 mockExcelWorkbookFactory,
                 mockConfiguration,
                 arrayListState,
-                mockMimeMessageFactory);
+                mockMimeMessageFactory,
+                mockFileAccess);
     }
 
     @Test
@@ -77,10 +88,16 @@ public class EmailTest {
                 mockExcelWorkbookFactory,
                 mockConfiguration,
                 arrayListState,
-                mockMimeMessageFactory);
+                mockMimeMessageFactory,
+                mockFileAccess);
         testSubject.send(addressesTestInput, subjectLineTestInput, messageBodyTestInput);
         assertEquals(2, arrayListState.size());
         assertTrue(arrayListState.contains(mockConfiguration.getProperty("workingDirectory") + documentNameTestInput + ".pdf"));
         assertTrue(arrayListState.contains(mockConfiguration.getProperty("workingDirectory") + documentNameTestInput + ".txt"));
+    }
+
+    @Test
+    public void testSendCleansUpIfsFiles() {
+
     }
 }

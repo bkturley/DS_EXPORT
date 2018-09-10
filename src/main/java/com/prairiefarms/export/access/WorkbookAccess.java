@@ -6,7 +6,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 public class WorkbookAccess {
     private static Workbook instance;
 
-    public WorkbookAccess(){};
+    public WorkbookAccess(){}
 
     public static synchronized Workbook getInstance(){
         if(instance == null){

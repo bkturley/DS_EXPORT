@@ -6,7 +6,7 @@ import org.apache.poi.ss.usermodel.CellType;
 
 import java.util.List;
 
-public class WritableLineFactory {
+class WritableLineFactory {
     public WriteableLine newWritableLine(List<Pair<String, String>> cells, String recordType){
         return new WriteableLine(cells, recordType);
     }
