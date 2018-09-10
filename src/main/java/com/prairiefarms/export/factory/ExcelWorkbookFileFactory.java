@@ -14,7 +14,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 
-class Writer {
+class ExcelWorkbookFileFactory {
 
 
     private Configuration configuration;
@@ -22,14 +22,14 @@ class Writer {
     private CellStyleFactory cellStyleFactory;
     private WriteableReportDataFactory writeableReportDataFactory;
 
-    public Writer(){
+    public ExcelWorkbookFileFactory(){
         this(new Configuration(), new WorkbookAccess(), new CellStyleFactory(), new WriteableReportDataFactory());
     }
 
-    Writer(Configuration configuration,
-           WorkbookAccess workbook,
-           CellStyleFactory cellStyleFactory,
-           WriteableReportDataFactory writeableReportDataFactory){
+    ExcelWorkbookFileFactory(Configuration configuration,
+                             WorkbookAccess workbook,
+                             CellStyleFactory cellStyleFactory,
+                             WriteableReportDataFactory writeableReportDataFactory){
         this.configuration = configuration;
         this.workbookAccess = workbook;
         this.cellStyleFactory = cellStyleFactory;
@@ -37,7 +37,7 @@ class Writer {
     }
 
 
-    public File write(String fileName) throws IOException {
+    public File newExcelWorkbookFile(String fileName) throws IOException {
         Sheet sheet = workbookAccess.getInstance().createSheet("Report");
         int rowIndex = 0;
         boolean doneWritingHeaders = false;
