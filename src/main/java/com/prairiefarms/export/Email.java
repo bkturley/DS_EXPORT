@@ -59,8 +59,9 @@ public class Email {
         }
     }
 
-    void send(List<String> toAddresses, String subjectLine, String messageBodyText) throws MessagingException {
+    public List<String> send(List<String> toAddresses, String subjectLine, String messageBodyText) throws MessagingException {
         mimeMessageFactory.newMimeMessage(toAddresses, subjectLine, getMessageContent(messageBodyText));
+        return attachments;
     }
 
     Multipart getMessageContent(String messageBodyText) throws MessagingException {

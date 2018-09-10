@@ -14,10 +14,10 @@ public class IfsCleanup {
         this.configuration = configuration;
     }
 
-    public void remove(String reportId){
-        List<String> exportFormats = configuration.getList("exportFormats");
-        for (String exportFormat : exportFormats){
-            File deleteMe = new File(configuration.getProperty("workingDirectory") + reportId + exportFormat);
+    public void remove(List<String> filePaths){
+
+        for(String filePath : filePaths){
+            File deleteMe = new File(filePath);
             deleteMe.delete();
         }
     }

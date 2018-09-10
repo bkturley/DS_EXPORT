@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class ExportReportApplicationTest {
 
@@ -39,7 +40,9 @@ public class ExportReportApplicationTest {
 
     @Test
     public void testRunRemovesLeftoverIfsFiles() throws MessagingException {
+        List<String> expectedArrayList = Arrays.asList("txt", "pdf", "xlsx");
+        when(mockEmail.send(toAddressesList, testInput[2], testInput[3])).thenReturn(expectedArrayList);
         testSubject.run(testInput);
-        verify(mockIfsCleanup).remove(testInput[0]);
+        verify(mockIfsCleanup).remove(expectedArrayList);
     }
 }

@@ -25,7 +25,6 @@ public class ExportReportApplication {
         String emailSubjectLine = args[2];
         String emailMessageBodyText = args[3];
 
-        email.send(emailRecipients, emailSubjectLine, emailMessageBodyText);
-        ifsCleanup.remove(reportName);
+        ifsCleanup.remove(email.send(emailRecipients, emailSubjectLine, emailMessageBodyText));
     }
 }
