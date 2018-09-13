@@ -1,7 +1,4 @@
-package com.prairiefarms.export.factory;
-
-import com.prairiefarms.export.Configuration;
-import com.prairiefarms.export.access.SessionAccess;
+package com.prairiefarms.export.access;
 
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -12,13 +9,13 @@ import javax.mail.internet.MimeMessage;
 import java.util.Date;
 import java.util.List;
 
-public class MimeMessageFactory {
+public class MimeMessageAccess {
     private SessionAccess sessionAccess = new SessionAccess();
-    private Configuration configuration = new Configuration();
+    private ConfigurationAccess configurationAccess = new ConfigurationAccess();
     public void newMimeMessage(List<String> addresses, String subjectLine, Multipart messageContent) throws MessagingException {
         MimeMessage message = new MimeMessage(sessionAccess.getSession());
 
-        message.setFrom(new InternetAddress(configuration.getProperty("defaultSenderEmailAddress").trim().trim()));
+        message.setFrom(new InternetAddress(configurationAccess.getProperty("defaultSenderEmailAddress").trim().trim()));
 
         for(String address : addresses){
             message.addRecipients(Message.RecipientType.TO, InternetAddress.parse(address));

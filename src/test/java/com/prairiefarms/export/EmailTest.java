@@ -1,8 +1,9 @@
 package com.prairiefarms.export;
 
+import com.prairiefarms.export.access.ConfigurationAccess;
 import com.prairiefarms.export.access.FileAccess;
 import com.prairiefarms.export.factory.ExcelWorkbookFileFactory;
-import com.prairiefarms.export.factory.MimeMessageFactory;
+import com.prairiefarms.export.access.MimeMessageAccess;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -28,10 +29,10 @@ public class EmailTest {
     @Mock
     private ExcelWorkbookFileFactory mockExcelWorkbookFactory;
     @Mock
-    private Configuration mockConfiguration;
+    private ConfigurationAccess mockConfigurationAccess;
     private ArrayList<String> arrayListState;
     @Mock
-    private MimeMessageFactory mockMimeMessageFactory;
+    private MimeMessageAccess mockMimeMessageAccess;
     @Mock
     private FileAccess mockFileAccess;
 
@@ -45,7 +46,7 @@ public class EmailTest {
     public void setup() throws IOException {
         MockitoAnnotations.initMocks(this);
         arrayListState = new ArrayList<>();
-        when(mockConfiguration.getProperty("workingDirectory")).thenReturn("workingDirectory/");
+        when(mockConfigurationAccess.getProperty("workingDirectory")).thenReturn("workingDirectory/");
         File xlsxFile = mock(File.class);
         when(xlsxFile.getAbsolutePath()).thenReturn("workingDirectory/" + documentNameTestInput + ".xlsx");
         File txtFile = mock(File.class);
@@ -57,16 +58,16 @@ public class EmailTest {
         when(mockExcelWorkbookFactory.newExcelWorkbookFile(documentNameTestInput)).thenReturn(xlsxFile);
         testSubject = new Email(documentNameTestInput,
                 mockExcelWorkbookFactory,
-                mockConfiguration,
+                mockConfigurationAccess,
                 arrayListState,
-                mockMimeMessageFactory,
+                mockMimeMessageAccess,
                 mockFileAccess);
     }
 
     @Test
     public void testSendSendsExpectedEmail() throws MessagingException {
         testSubject.send(addressesTestInput, subjectLineTestInput, messageBodyTestInput);
-        verify(mockMimeMessageFactory).newMimeMessage(addressesTestInput,
+        verify(mockMimeMessageAccess).newMimeMessage(addressesTestInput,
                 subjectLineTestInput,
                 testSubject.getMessageContent(messageBodyTestInput));
     }
@@ -75,9 +76,9 @@ public class EmailTest {
     public void testSendSendsWithExpectedAttachments() throws MessagingException {
         testSubject.send(addressesTestInput, subjectLineTestInput, messageBodyTestInput);
         assertEquals(3, arrayListState.size());
-        assertTrue(arrayListState.contains(mockConfiguration.getProperty("workingDirectory") + documentNameTestInput + ".pdf"));
-        assertTrue(arrayListState.contains(mockConfiguration.getProperty("workingDirectory") + documentNameTestInput + ".txt"));
-        assertTrue(arrayListState.contains(mockConfiguration.getProperty("workingDirectory") + documentNameTestInput + ".xlsx"));
+        assertTrue(arrayListState.contains(mockConfigurationAccess.getProperty("workingDirectory") + documentNameTestInput + ".pdf"));
+        assertTrue(arrayListState.contains(mockConfigurationAccess.getProperty("workingDirectory") + documentNameTestInput + ".txt"));
+        assertTrue(arrayListState.contains(mockConfigurationAccess.getProperty("workingDirectory") + documentNameTestInput + ".xlsx"));
     }
 
     @Test
@@ -86,14 +87,14 @@ public class EmailTest {
         arrayListState = new ArrayList<>();
         testSubject = new Email(documentNameTestInput,
                 mockExcelWorkbookFactory,
-                mockConfiguration,
+                mockConfigurationAccess,
                 arrayListState,
-                mockMimeMessageFactory,
+                mockMimeMessageAccess,
                 mockFileAccess);
         testSubject.send(addressesTestInput, subjectLineTestInput, messageBodyTestInput);
         assertEquals(2, arrayListState.size());
-        assertTrue(arrayListState.contains(mockConfiguration.getProperty("workingDirectory") + documentNameTestInput + ".pdf"));
-        assertTrue(arrayListState.contains(mockConfiguration.getProperty("workingDirectory") + documentNameTestInput + ".txt"));
+        assertTrue(arrayListState.contains(mockConfigurationAccess.getProperty("workingDirectory") + documentNameTestInput + ".pdf"));
+        assertTrue(arrayListState.contains(mockConfigurationAccess.getProperty("workingDirectory") + documentNameTestInput + ".txt"));
     }
 
     @Test

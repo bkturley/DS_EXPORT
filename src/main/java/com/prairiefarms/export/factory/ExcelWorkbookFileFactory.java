@@ -1,6 +1,6 @@
 package com.prairiefarms.export.factory;
 
-import com.prairiefarms.export.Configuration;
+import com.prairiefarms.export.access.ConfigurationAccess;
 import com.prairiefarms.export.access.WorkbookAccess;
 import com.prairiefarms.export.access.CellStyleAccess;
 import com.prairiefarms.export.factory.products.WriteableLine;
@@ -8,6 +8,7 @@ import com.prairiefarms.export.factory.products.WriteableReportData;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -17,20 +18,20 @@ import java.util.List;
 public class ExcelWorkbookFileFactory {
 
 
-    private Configuration configuration;
+    private ConfigurationAccess configurationAccess;
     private WorkbookAccess workbookAccess;
     private CellStyleAccess cellStyleAccess;
     private WriteableReportDataFactory writeableReportDataFactory;
 
     public ExcelWorkbookFileFactory(){
-        this(new Configuration(), new WorkbookAccess(), new CellStyleAccess(), new WriteableReportDataFactory());
+        this(new ConfigurationAccess(), new WorkbookAccess(), new CellStyleAccess(), new WriteableReportDataFactory());
     }
 
-    ExcelWorkbookFileFactory(Configuration configuration,
+    ExcelWorkbookFileFactory(ConfigurationAccess configurationAccess,
                              WorkbookAccess workbook,
                              CellStyleAccess cellStyleAccess,
                              WriteableReportDataFactory writeableReportDataFactory){
-        this.configuration = configuration;
+        this.configurationAccess = configurationAccess;
         this.workbookAccess = workbook;
         this.cellStyleAccess = cellStyleAccess;
         this.writeableReportDataFactory = writeableReportDataFactory;
@@ -42,26 +43,33 @@ public class ExcelWorkbookFileFactory {
         int rowIndex = 0;
         boolean doneWritingHeaders = false;
         WriteableReportData writeableLines = writeableReportDataFactory.newWriteableReportData(fileName);
+        int maxCellsPerRow = getMaxCellsPerRow(writeableLines);
         for (WriteableLine WriteableLine : writeableLines.getData()) {
             List<Pair<String, String>> cells = WriteableLine.getCells();
             switch (WriteableLine.getRecordType()) {
                 case "detail":
-                case "footer":
                     doneWritingHeaders = true;
-                    writeReportLine(cells, rowIndex++, sheet);
+                    writeRecordLine(cells, rowIndex++, sheet);
                     break;
                 case "header":
+                    if (!doneWritingHeaders) {
+                        writeMergedLine(maxCellsPerRow, cells, rowIndex++, sheet);
+                    }
+                    break;
                 case "label":
                     if (!doneWritingHeaders) {
-                        writeReportLine(cells, rowIndex++, sheet);
+                        writeRecordLine(cells, rowIndex++, sheet);
                     }
+                    break;
+                case "footer":
+                    writeMergedLine(maxCellsPerRow, cells, rowIndex++, sheet);
                     break;
                 default:
                     errorOnUnknownRecordType(cells);
             }
         }
 
-        String newXlsxFilePath = configuration.getProperty("workingDirectory") + fileName + ".xlsx";
+        String newXlsxFilePath = configurationAccess.getProperty("workingDirectory") + fileName + ".xlsx";
 
         FileOutputStream newXLSXfile = new FileOutputStream(newXlsxFilePath);
         workbookAccess.getInstance().write(newXLSXfile);
@@ -72,7 +80,17 @@ public class ExcelWorkbookFileFactory {
 
     }
 
-    private void writeReportLine(List<Pair<String, String>> cellList, int rowIndex, Sheet sheet) {
+    private int getMaxCellsPerRow(WriteableReportData writeableReportData) {
+        int returnMe = 0;
+        for(WriteableLine writeableLine : writeableReportData.getData()){
+            if(writeableLine.getCells().size() > returnMe){
+                returnMe = writeableLine.getCells().size();
+            }
+        }
+        return returnMe;
+    }
+
+    private void writeRecordLine(List<Pair<String, String>> cellList, int rowIndex, Sheet sheet) {
         Row row = sheet.createRow(rowIndex);
         int cellIndex = 0;
         for (Pair<String, String> cellValue : cellList) {
@@ -80,6 +98,20 @@ public class ExcelWorkbookFileFactory {
             setCellValue(cell, cellValue);
             cell.setCellStyle(cellStyleAccess.newCellStyle(cellValue.getRight()));
         }
+    }
+
+    private void writeMergedLine(int mergeSize, List<Pair<String, String>> cellList, int rowIndex, Sheet sheet) {
+        Row row = sheet.createRow(rowIndex);
+        int cellIndex = 0;
+        String mergedText = "";
+        Cell cell = row.createCell(cellIndex++);
+        for (Pair<String, String> cellValue : cellList) {
+            mergedText += cellValue.getLeft() + "    ";
+        }
+
+        cell.setCellValue(mergedText);
+        cell.setCellStyle(cellStyleAccess.newCellStyle("string"));
+        sheet.addMergedRegion(new CellRangeAddress(rowIndex, rowIndex, 0, mergeSize));
     }
 
     private void setCellValue(Cell cell, Pair<String, String> cellValue) {

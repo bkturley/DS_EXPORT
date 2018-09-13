@@ -1,8 +1,10 @@
 package com.prairiefarms.export;
 
+import com.prairiefarms.export.access.ConfigurationAccess;
 import com.prairiefarms.export.access.FileAccess;
 import com.prairiefarms.export.factory.ExcelWorkbookFileFactory;
-import com.prairiefarms.export.factory.MimeMessageFactory;
+import com.prairiefarms.export.access.MimeMessageAccess;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,9 +26,9 @@ class Email {
     private String xlsxError = "";
 
     private ExcelWorkbookFileFactory excelWorkbookFactory;
-    private Configuration configuration;
+    private ConfigurationAccess configurationAccess;
     private List<String> attachmentPaths;
-    private MimeMessageFactory mimeMessageFactory;
+    private MimeMessageAccess mimeMessageAccess;
     private FileAccess fileAccess;
 
     private Multipart multipart = new MimeMultipart();
@@ -34,28 +36,40 @@ class Email {
     public Email(String documentName){
         this(documentName,
                 new ExcelWorkbookFileFactory(),
-                new Configuration(),
+                new ConfigurationAccess(),
                 new ArrayList<String>(),
-                new MimeMessageFactory(),
+                new MimeMessageAccess(),
                 new FileAccess());
     }
 
     public Email(String documentName,
                  ExcelWorkbookFileFactory excelWorkbookFactory,
-                 Configuration configuration,
+                 ConfigurationAccess configurationAccess,
                  List<String> attachmentPaths,
-                 MimeMessageFactory mimeMessageFactory,
+                 MimeMessageAccess mimeMessageAccess,
                  FileAccess fileAccess){
         this.excelWorkbookFactory = excelWorkbookFactory;
-        this.configuration = configuration;
+        this.configurationAccess = configurationAccess;
         this.attachmentPaths = attachmentPaths;
-        this.mimeMessageFactory = mimeMessageFactory;
+        this.mimeMessageAccess = mimeMessageAccess;
         this.fileAccess = fileAccess;
         this.attachmentPaths.addAll(getAttachment(documentName));
     }
 
-    public void send(List<String> toAddresses, String subjectLine, String messageBodyText) throws MessagingException {
-        mimeMessageFactory.newMimeMessage(toAddresses, subjectLine, getMessageContent(messageBodyText));
+    public void send(List<String> toAddresses, String subjectLine, String messageBodyText){
+        try{
+            if(StringUtils.isNotBlank(xlsxError)){
+                List<String> errorNotificationToAddresses = new ArrayList<>();
+                errorNotificationToAddresses.addAll(toAddresses);
+                errorNotificationToAddresses.add(configurationAccess.getProperty("errorNotificationEmailAddress"));
+                mimeMessageAccess.newMimeMessage(errorNotificationToAddresses, subjectLine, getMessageContent(messageBodyText));
+            }else {
+                mimeMessageAccess.newMimeMessage(toAddresses, subjectLine, getMessageContent(messageBodyText));
+            }
+        }catch (MessagingException m){
+            m.printStackTrace();
+        }
+
         for(String filePath : attachmentPaths){
             fileAccess.deleteFile(filePath);
         }
@@ -65,13 +79,13 @@ class Email {
 
         BodyPart messageBodyPart = new MimeBodyPart();
 
-        messageBodyPart.setContent(configuration.getProperty("defaultMessageBody")
+        messageBodyPart.setContent(configurationAccess.getProperty("defaultMessageBody")
                 + "<br><br>"
                 + messageBodyText
                 + "<br><br>"
                 + xlsxError
                 + "<br><br>"
-                + configuration.getProperty("disclaimer"), "text/html");
+                + configurationAccess.getProperty("disclaimer"), "text/html");
 
 
         multipart.addBodyPart(messageBodyPart);
@@ -111,7 +125,7 @@ class Email {
     }
 
     private File getAttachmentFile(String fileName, String fileExtension){
-        return fileAccess.getFile(configuration.getProperty("workingDirectory")
+        return fileAccess.getFile(configurationAccess.getProperty("workingDirectory")
                 + fileName
                 + fileExtension);
     }

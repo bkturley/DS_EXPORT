@@ -37,7 +37,7 @@ public class CellStyleAccess {
                 returnMe = getDetailBlankCellStyle();
                 break;
             default:
-                returnMe = getDetailStringCellStyle();
+                returnMe = getTotalStringCellStyle();
         }
         return returnMe;
     }
@@ -90,7 +90,7 @@ public class CellStyleAccess {
             totalTextFont.setColor(IndexedColors.BLACK.index);
             totalStringCellStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
             totalStringCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            totalStringCellStyle.setAlignment(HorizontalAlignment.CENTER);
+            totalStringCellStyle.setAlignment(HorizontalAlignment.LEFT);
             totalStringCellStyle.setFont(totalTextFont);
         }
         return totalStringCellStyle;

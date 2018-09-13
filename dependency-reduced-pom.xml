@@ -2,9 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.prairieFarms</groupId>
-  <artifactId>export</artifactId>
-  <name>export</name>
-  <version>1.0-SNAPSHOT</version>
+  <artifactId>ds_export</artifactId>
+  <name>ds_export</name>
+  <version>18.9.13</version>
   <url>http://www.prairiefarms.com</url>
   <build>
     <plugins>

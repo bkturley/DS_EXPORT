@@ -4,9 +4,6 @@ public class Export {
 
     private static ExportReportApplication exportReportApplication;
 
-    public Export(){
-    }
-
     Export(ExportReportApplication exportReportApplication){
         this.exportReportApplication = exportReportApplication;
     }

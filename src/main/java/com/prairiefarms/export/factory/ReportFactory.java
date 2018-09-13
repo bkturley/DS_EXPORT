@@ -2,7 +2,7 @@ package com.prairiefarms.export.factory;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.prairiefarms.export.Configuration;
+import com.prairiefarms.export.access.ConfigurationAccess;
 import com.prairiefarms.export.access.FileAccess;
 import com.prairiefarms.export.types.Report;
 
@@ -11,14 +11,14 @@ import java.io.IOException;
 import java.util.List;
 
 class ReportFactory {
-    private Configuration configuration = new Configuration();
+    private ConfigurationAccess configurationAccess = new ConfigurationAccess();
     private ObjectMapper objectMapper = new ObjectMapper();
     private FileAccess fileAccess = new FileAccess();
 
     public Report getReport(String textFileName) throws IOException {
         Report returnME = null;
         String jsonName = getJsonName(textFileName);
-        File jsonFile = fileAccess.getFile(configuration.getProperty("jsonMaps") + jsonName.trim() + ".json");
+        File jsonFile = fileAccess.getFile(configurationAccess.getProperty("jsonMaps") + jsonName.trim() + ".json");
         List<Report> reports = objectMapper.readValue(jsonFile, new TypeReference<List<Report>>() {
         });
 
