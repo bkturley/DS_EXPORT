@@ -36,7 +36,7 @@ class WriteableReportDataFactory {
         for (String textLine : textLines) {
             if (!textLine.isEmpty()) {
                 boolean lineTypeWasDetermined = false;
-                Report report = reportFactory.getReport(fileName);
+                Report report = reportFactory.getReport(fileName); //move outside loop?
                 for (ReportRow reportRow : report.getReportRows()) {
                     if(!lineTypeWasDetermined){
                         boolean positionalMatch = isPositionalMatch(textLine, reportRow);

@@ -41,26 +41,16 @@ public class ExcelWorkbookFileFactory {
     public File newExcelWorkbookFile(String fileName) throws IOException {
         Sheet sheet = workbookAccess.getInstance().createSheet("Report");
         int rowIndex = 0;
-        boolean doneWritingHeaders = false;
         WriteableReportData writeableLines = writeableReportDataFactory.newWriteableReportData(fileName);
         int maxCellsPerRow = getMaxCellsPerRow(writeableLines);
         for (WriteableLine WriteableLine : writeableLines.getData()) {
             List<Pair<String, String>> cells = WriteableLine.getCells();
             switch (WriteableLine.getRecordType()) {
                 case "detail":
-                    doneWritingHeaders = true;
+                case "label":
                     writeRecordLine(cells, rowIndex++, sheet);
                     break;
                 case "header":
-                    if (!doneWritingHeaders) {
-                        writeMergedLine(maxCellsPerRow, cells, rowIndex++, sheet);
-                    }
-                    break;
-                case "label":
-                    if (!doneWritingHeaders) {
-                        writeRecordLine(cells, rowIndex++, sheet);
-                    }
-                    break;
                 case "footer":
                     writeMergedLine(maxCellsPerRow, cells, rowIndex++, sheet);
                     break;
@@ -68,9 +58,7 @@ public class ExcelWorkbookFileFactory {
                     errorOnUnknownRecordType(cells);
             }
         }
-
         String newXlsxFilePath = configurationAccess.getProperty("workingDirectory") + fileName + ".xlsx";
-
         FileOutputStream newXLSXfile = new FileOutputStream(newXlsxFilePath);
         workbookAccess.getInstance().write(newXLSXfile);
         newXLSXfile.close();
@@ -121,7 +109,7 @@ public class ExcelWorkbookFileFactory {
                 if(StringUtils.isNotBlank(cellValue.getLeft())){
                     cell.setCellValue(Double.parseDouble(cellValue.getLeft()));
                 }else{
-                    cell.setCellValue("");
+                    cell.setCellValue(0);
                 }
                 cell.setCellType(CellType.NUMERIC);
                 break;
