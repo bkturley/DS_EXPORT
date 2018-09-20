@@ -2,6 +2,7 @@ package com.prairiefarms.export;
 
 import com.prairiefarms.export.access.ConfigurationAccess;
 import com.prairiefarms.export.access.FileAccess;
+import com.prairiefarms.export.access.LoggerAccess;
 import com.prairiefarms.export.factory.ExcelWorkbookFileFactory;
 import com.prairiefarms.export.access.MimeMessageAccess;
 import org.apache.commons.lang3.StringUtils;
@@ -66,12 +67,12 @@ class Email {
             }else {
                 mimeMessageAccess.newMimeMessage(toAddresses, subjectLine, getMessageContent(messageBodyText));
             }
-        }catch (MessagingException m){
-            m.printStackTrace();
-        }
-
-        for(String filePath : attachmentPaths){
-            fileAccess.deleteFile(filePath);
+        }catch (MessagingException messagingException){
+            new LoggerAccess().log(messagingException);
+        }finally {
+            for(String filePath : attachmentPaths){
+                fileAccess.deleteFile(filePath);
+            }
         }
     }
 
@@ -110,7 +111,6 @@ class Email {
             returnMe.add(getXlsxFilePath(documentName));
         }catch (java.lang.Exception e){
             StringWriter sw = new StringWriter();
-            e.printStackTrace(new PrintWriter(sw));
             xlsxError = "Problem converting to Xlsx format. Technical details: <br>" + sw.toString();
         }
         return returnMe;
