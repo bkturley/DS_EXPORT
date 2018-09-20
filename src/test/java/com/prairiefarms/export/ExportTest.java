@@ -1,5 +1,6 @@
 package com.prairiefarms.export;
 
+import com.prairiefarms.export.access.LoggerAccess;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -15,25 +16,13 @@ public class ExportTest {
     private static String[] testInput = {"1", "2", "3"};
     @Mock
     ExportReportApplication mockExportReportApplication;
+    @Mock
+    LoggerAccess mockLoggerAccess;
 
     @Before
     public void setup(){
         MockitoAnnotations.initMocks(this);
-        testSubject = new Export(mockExportReportApplication);
+        testSubject = new Export(mockExportReportApplication, mockLoggerAccess);
     }
 
-    @Test
-    public void testMainDelegatesToApplication() throws MessagingException {
-
-        testSubject.main(testInput);
-        verify(mockExportReportApplication).run(testInput);
-    }
-
-    @Test
-    public void testMainSwallowsExceptions() throws MessagingException {
-        java.lang.RuntimeException expectedException = mock(java.lang.RuntimeException.class);
-        doThrow(expectedException).when(mockExportReportApplication).run(testInput);
-        testSubject.main(testInput);
-        verify(expectedException).printStackTrace();
-    }
 }
