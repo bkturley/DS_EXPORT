@@ -6,8 +6,6 @@ import java.util.Properties;
 
 public class ConfigurationAccess {
 
-    //TODO: singleton?
-
     private static String productionConfigFilePath = "/java/ds_export/DS_EXPORT.properties";
     private static String developmentConfigFilePath = "D:/ds_export/DS_EXPORT.properties";
     private static Properties properties;
