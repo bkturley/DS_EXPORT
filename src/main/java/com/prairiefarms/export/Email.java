@@ -111,6 +111,7 @@ class Email {
             returnMe.add(getXlsxFilePath(documentName));
         }catch (java.lang.Exception e){
             StringWriter sw = new StringWriter();
+            e.printStackTrace(new PrintWriter(sw));
             xlsxError = "Problem converting to Xlsx format. Technical details: <br>" + sw.toString();
         }
         return returnMe;

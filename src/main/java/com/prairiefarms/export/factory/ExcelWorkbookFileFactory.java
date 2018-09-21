@@ -42,7 +42,7 @@ public class ExcelWorkbookFileFactory {
         Sheet sheet = workbookAccess.getInstance().createSheet("Report");
         int rowIndex = 0;
         WriteableReportData writeableLines = writeableReportDataFactory.newWriteableReportData(fileName);
-        int maxCellsPerRow = getMaxCellsPerRow(writeableLines);
+        int maxCellsPerRow = getMaxColumnIndex(writeableLines);
         for (WriteableLine WriteableLine : writeableLines.getData()) {
             List<Pair<String, String>> cells = WriteableLine.getCells();
             switch (WriteableLine.getRecordType()) {
@@ -68,14 +68,14 @@ public class ExcelWorkbookFileFactory {
 
     }
 
-    private int getMaxCellsPerRow(WriteableReportData writeableReportData) {
+    private int getMaxColumnIndex(WriteableReportData writeableReportData) {
         int returnMe = 0;
         for(WriteableLine writeableLine : writeableReportData.getData()){
             if(writeableLine.getCells().size() > returnMe){
                 returnMe = writeableLine.getCells().size();
             }
         }
-        return returnMe;
+        return returnMe - 1;
     }
 
     private void writeRecordLine(List<Pair<String, String>> cellList, int rowIndex, Sheet sheet) {
@@ -94,7 +94,7 @@ public class ExcelWorkbookFileFactory {
         String mergedText = "";
         Cell cell = row.createCell(cellIndex++);
         for (Pair<String, String> cellValue : cellList) {
-            mergedText += cellValue.getLeft() + "    ";
+            mergedText += cellValue.getLeft() + " ";
         }
 
         cell.setCellValue(mergedText);
