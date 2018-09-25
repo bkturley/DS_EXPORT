@@ -26,7 +26,6 @@ public class ConfigurationAccess {
         }
     }
 
-
     public String getProperty(String lookupKey){
         String returnMe = "";
         String lookupResult = properties.getProperty(lookupKey);

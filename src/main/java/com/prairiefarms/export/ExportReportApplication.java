@@ -1,6 +1,5 @@
 package com.prairiefarms.export;
 
-import javax.mail.MessagingException;
 import java.util.Arrays;
 import java.util.List;
 

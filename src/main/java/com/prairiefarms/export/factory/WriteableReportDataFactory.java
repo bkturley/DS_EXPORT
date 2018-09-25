@@ -80,13 +80,13 @@ class WriteableReportDataFactory {
                     switch (reportColumn.getType()) {
                         case "integer":
                             try {
-                                Integer.parseInt(validateMe.trim());
+                                Integer.parseInt(validateMe.trim().replaceAll(",", ""));
                             } catch (NumberFormatException numberFormatException) {
                                 dataTypesMatch = false;
                             }
                         case "double":
                             try {
-                                Float.parseFloat(validateMe.trim());
+                                Float.parseFloat(validateMe.trim().replaceAll(",", ""));
                             } catch (NumberFormatException numberFormatException) {
                                 dataTypesMatch = false;
                             }

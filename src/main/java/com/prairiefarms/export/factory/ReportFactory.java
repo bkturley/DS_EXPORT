@@ -30,7 +30,7 @@ class ReportFactory {
         }
 
         if (returnME == null) {
-            throw new IOException("Report Conversion layout with title: " + jsonName + " not found in conversion file: " + jsonName + ".json");
+            throw new IOException("Report Conversion layout with title: " + jsonName + " not found in this conversion file: " + jsonName + ".json");
         }
         return returnME;
     }

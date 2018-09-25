@@ -20,7 +20,6 @@ public class Export {
             }
             exportReportApplication.run(args);
         }catch (java.lang.Exception exception){
-            exception.printStackTrace();
             loggerAccess.log(exception);
         }
     }

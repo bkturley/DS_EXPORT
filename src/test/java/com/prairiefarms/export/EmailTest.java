@@ -99,6 +99,10 @@ public class EmailTest {
 
     @Test
     public void testSendCleansUpIfsFiles() {
-
+        verify(mockFileAccess, times(0)).deleteFile(anyString());
+        testSubject.send(addressesTestInput, subjectLineTestInput, messageBodyTestInput);
+        verify(mockFileAccess).deleteFile(mockConfigurationAccess.getProperty("workingDirectory") + documentNameTestInput + ".pdf");
+        verify(mockFileAccess).deleteFile(mockConfigurationAccess.getProperty("workingDirectory") + documentNameTestInput + ".txt");
+        verify(mockFileAccess).deleteFile(mockConfigurationAccess.getProperty("workingDirectory") + documentNameTestInput + ".xlsx");
     }
 }

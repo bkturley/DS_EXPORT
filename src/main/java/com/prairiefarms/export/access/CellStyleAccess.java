@@ -5,115 +5,54 @@ import org.apache.poi.ss.usermodel.*;
 public class CellStyleAccess {
 
     private WorkbookAccess workbookAccess = new WorkbookAccess();
+
     private Workbook workbook;
 
-    private CellStyle headerCellStyle;
-    private CellStyle columnLabelCellStyle;
-
-    private CellStyle detailStringCellStyle;
-    private CellStyle detailIntegerCellStyle;
-    private CellStyle detailDoubleCellStyle;
-
-
-    private CellStyle totalStringCellStyle;
+    private CellStyle stringCellStyle;
+    private CellStyle integerCellStyle;
+    private CellStyle twoDecimalCellStyle;
+    private CellStyle fourDecimalCellStyle;
 
     public CellStyleAccess(){
         workbook = workbookAccess.getInstance();
+
+        integerCellStyle = workbook.createCellStyle();
+        integerCellStyle.setDataFormat(workbook.createDataFormat().getFormat("_(* #,##0_);[RED]_(* \\(#,##0\\);_(* -??_);_(@_)"));
+        integerCellStyle.setAlignment(HorizontalAlignment.CENTER);
+
+        twoDecimalCellStyle = workbook.createCellStyle();
+        twoDecimalCellStyle.setDataFormat(workbook.createDataFormat().getFormat("_(* #,##0.00_);[RED]_(* \\(#,##0.00\\);_(* -??_);_(@_)"));
+        twoDecimalCellStyle.setAlignment(HorizontalAlignment.CENTER);
+
+        stringCellStyle = workbook.createCellStyle();
+        Font detailTextFont = workbook.createFont();
+        stringCellStyle.setAlignment(HorizontalAlignment.CENTER);
+        stringCellStyle.setFont(detailTextFont);
+
+        fourDecimalCellStyle = workbook.createCellStyle();
+        fourDecimalCellStyle.setDataFormat(workbook.createDataFormat().getFormat("_(* #,##0.0000_);[RED]_(* \\(#,##0.0000\\);_(* -??_);_(@_)"));
+        fourDecimalCellStyle.setAlignment(HorizontalAlignment.CENTER);
     }
+
 
     public CellStyle newCellStyle(String cellType) {
         CellStyle returnMe;
         switch (cellType){
-            case "string":
-                returnMe = getDetailStringCellStyle();
-                break;
             case "integer":
-                returnMe = getDetailIntegerCellStyle();
+                returnMe = integerCellStyle;
                 break;
-            case "double":
-                returnMe = getDetailDoubleCellStyle();
+            case "2decimal":
+                returnMe = twoDecimalCellStyle;
                 break;
+            case "4decimal":
+                returnMe = fourDecimalCellStyle;
+                break;
+            case "string":
             case "blank":
-                returnMe = getDetailBlankCellStyle();
-                break;
             default:
-                returnMe = getTotalStringCellStyle();
+                returnMe = stringCellStyle;
         }
         return returnMe;
-    }
-
-    private CellStyle getDetailBlankCellStyle() {
-        return getDetailStringCellStyle();
-    }
-
-    private CellStyle getDetailStringCellStyle() {
-        if(detailStringCellStyle == null){
-            detailStringCellStyle = workbook.createCellStyle();
-            Font detailTextFont = workbook.createFont();
-            detailStringCellStyle.setAlignment(HorizontalAlignment.CENTER);
-            detailStringCellStyle.setFont(detailTextFont);
-        }
-        return detailStringCellStyle;
-    }
-
-    private CellStyle getHeaderTextStyle() {
-        if (headerCellStyle == null) {
-            headerCellStyle = workbook.createCellStyle();
-            Font headerTextFont = workbook.createFont();
-            headerTextFont.setBold(true);
-            headerCellStyle.setAlignment(HorizontalAlignment.CENTER);
-            headerCellStyle.setFont(headerTextFont);
-        }
-        return headerCellStyle;
-    }
-
-    private CellStyle getColumnLabelCellStyle() {
-        if(columnLabelCellStyle == null){
-            columnLabelCellStyle = workbook.createCellStyle();
-            Font labelTextFont = workbook.createFont();
-            labelTextFont.setBold(true);
-            labelTextFont.setColor(IndexedColors.BLACK.index);
-
-            columnLabelCellStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
-            columnLabelCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            columnLabelCellStyle.setFont(labelTextFont);
-            columnLabelCellStyle.setAlignment(HorizontalAlignment.CENTER);
-        }
-        return columnLabelCellStyle;
-    }
-
-    private CellStyle getTotalStringCellStyle() {
-        if(totalStringCellStyle == null){
-            totalStringCellStyle = workbook.createCellStyle();
-            Font totalTextFont = workbook.createFont();
-            totalTextFont.setBold(true);
-            totalTextFont.setColor(IndexedColors.BLACK.index);
-            totalStringCellStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
-            totalStringCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            totalStringCellStyle.setAlignment(HorizontalAlignment.LEFT);
-            totalStringCellStyle.setFont(totalTextFont);
-        }
-        return totalStringCellStyle;
-    }
-
-    private CellStyle getDetailIntegerCellStyle() {
-        if(detailIntegerCellStyle == null){
-            DataFormat integerFormat = workbook.createDataFormat();
-            detailIntegerCellStyle = workbook.createCellStyle();
-            detailIntegerCellStyle.setDataFormat(integerFormat.getFormat("_(* #,##0_);[RED]_(* \\(#,##0\\);_(* -??_);_(@_)"));
-            detailIntegerCellStyle.setAlignment(HorizontalAlignment.CENTER);
-        }
-        return detailIntegerCellStyle;
-    }
-
-    private CellStyle getDetailDoubleCellStyle() {
-        if(detailDoubleCellStyle == null){
-            DataFormat doubleFormat = workbook.createDataFormat();
-            detailDoubleCellStyle = workbook.createCellStyle();
-            detailDoubleCellStyle.setDataFormat(doubleFormat.getFormat("_(* #,##0.00_);[RED]_(* \\(#,##0.00\\);_(* -??_);_(@_)"));
-            detailDoubleCellStyle.setAlignment(HorizontalAlignment.CENTER);
-        }
-        return detailDoubleCellStyle;
     }
 
 }
