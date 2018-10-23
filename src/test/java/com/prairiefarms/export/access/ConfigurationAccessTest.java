@@ -1,6 +1,5 @@
 package com.prairiefarms.export.access;
 
-import com.prairiefarms.export.access.ConfigurationAccess;
 import org.junit.Before;
 import org.junit.Test;
 import java.util.Properties;
@@ -15,15 +14,15 @@ public class ConfigurationAccessTest {
     @Before
     public void setup(){
         properties = new  Properties();
-        testSubject = new ConfigurationAccess();
+        testSubject = new ConfigurationAccess(properties);
     }
 
-//    @Test
-//    public void testGetPropertyReturnsExpectedProperty() {
-//        String testKey = "testKeyValue";
-//        String testValue = "testValueValue";
-//        properties.setProperty(testKey, testValue);
-//        assertEquals(testValue, testSubject.getProperty(testKey));
-//    }
+    @Test
+    public void testGetPropertyReturnsExpectedProperty() {
+        String testKey = "testKeyValue";
+        String testValue = "testValueValue";
+        properties.setProperty(testKey, testValue);
+        assertEquals(testValue, testSubject.getProperty(testKey));
+    }
 
 }
