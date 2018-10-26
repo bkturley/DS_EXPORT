@@ -43,11 +43,22 @@ public class ExcelWorkbookFileFactory {
         int rowIndex = 0;
         WriteableReportData writeableLines = writeableReportDataFactory.newWriteableReportData(fileName);
         int maxCellsPerRow = getMaxColumnIndex(writeableLines);
+        boolean pastHeadline = false;
         for (WriteableLine WriteableLine : writeableLines.getData()) {
             List<Pair<String, String>> cells = WriteableLine.getCells();
             switch (WriteableLine.getRecordType()) {
-                case "detail":
+                case "headline":
+                    if(!pastHeadline){
+                        writeMergedLine(maxCellsPerRow, cells, rowIndex++, sheet);
+                    }
+                    break;
                 case "label":
+                    if(!pastHeadline){
+                        writeRecordLine(cells, rowIndex++, sheet);
+                    }
+                    break;
+                case "detail":
+                    pastHeadline = true;
                     writeRecordLine(cells, rowIndex++, sheet);
                     break;
                 case "header":
