@@ -4,7 +4,7 @@
   <groupId>com.prairieFarms</groupId>
   <artifactId>ds_export</artifactId>
   <name>ds_export</name>
-  <version>18.9.24</version>
+  <version>18.10.26</version>
   <url>http://www.prairiefarms.com</url>
   <build>
     <plugins>
