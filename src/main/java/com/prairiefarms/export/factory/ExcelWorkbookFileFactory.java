@@ -82,7 +82,7 @@ public class ExcelWorkbookFileFactory {
     private int getMaxColumnIndex(WriteableReportData writeableReportData) {
         int returnMe = 0;
         for(WriteableLine writeableLine : writeableReportData.getData()){
-            if(writeableLine.getCells().size() > returnMe){
+            if(writeableLine.getCells().size() > returnMe && "detail".equals(writeableLine.getRecordType())){
                 returnMe = writeableLine.getCells().size();
             }
         }
@@ -118,7 +118,7 @@ public class ExcelWorkbookFileFactory {
             case "integer":
             case "double":
                 if(StringUtils.isNotBlank(cellValue.getLeft())){
-                    cell.setCellValue(Double.parseDouble(cellValue.getLeft()));
+                    cell.setCellValue(Double.parseDouble(cellValue.getLeft().replaceAll(",", "")));
                 }else{
                     cell.setCellValue(0);
                 }
