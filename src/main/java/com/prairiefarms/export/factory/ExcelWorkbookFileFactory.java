@@ -13,7 +13,10 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ExcelWorkbookFileFactory {
 
@@ -39,44 +42,66 @@ public class ExcelWorkbookFileFactory {
 
 
     public File newExcelWorkbookFile(String fileName) throws IOException {
+
         Sheet sheet = workbookAccess.getInstance().createSheet("Report");
-        int rowIndex = 0;
         WriteableReportData writeableLines = writeableReportDataFactory.newWriteableReportData(fileName);
         int maxCellsPerRow = getMaxColumnIndex(writeableLines);
         boolean pastHeadline = false;
-        for (WriteableLine WriteableLine : writeableLines.getData()) {
-            List<Pair<String, String>> cells = WriteableLine.getCells();
-            switch (WriteableLine.getRecordType()) {
+        for (WriteableLine writeableLine : writeableLines.getData()) {
+            List<Pair<String, String>> cells = writeableLine.getCells();
+            switch (writeableLine.getRecordType()) {
                 case "headline":
                     if(!pastHeadline){
-                        writeMergedLine(maxCellsPerRow, cells, rowIndex++, sheet);
+                        writeMergedLine(maxCellsPerRow, cells, sheet);
                     }
                     break;
                 case "label":
                     if(!pastHeadline){
-                        writeRecordLine(cells, rowIndex++, sheet);
+                        writeRecordLine(cells, sheet);
                     }
                     break;
                 case "detail":
                     pastHeadline = true;
-                    writeRecordLine(cells, rowIndex++, sheet);
+                    writeRecordLine(cells, sheet);
                     break;
                 case "header":
                 case "footer":
-                    writeMergedLine(maxCellsPerRow, cells, rowIndex++, sheet);
+                    writeMergedLine(maxCellsPerRow, cells,  sheet);
                     break;
                 default:
                     errorOnUnknownRecordType(cells);
             }
         }
+
+        //if this gets out of hand, migrate to database lookups instead.
+        String reportName = fileName.split("\\.")[3];
+        if("P818TPRT".equals(reportName)) {
+            Map<Integer, Sheet> groupTabs = new HashMap<>();
+            for (WriteableLine writeableLine : writeableLines.getData()) {
+                List<Pair<String, String>> cells = writeableLine.getCells();
+                if ("detail".equals(writeableLine.getRecordType()) && StringUtils.isNotBlank(cells.get(1).getLeft())) {
+                    Integer groupNumber = Integer.parseInt(cells.get(1).getLeft().trim());
+                    if(!groupTabs.containsKey(groupNumber)){
+                        groupTabs.put(groupNumber, workbookAccess.getInstance().createSheet("Group " + groupNumber.toString()));
+                        // todo: write the label line?
+                        
+                    }
+                    writeRecordLine(cells, groupTabs.get(groupNumber));
+                }
+            }
+        }
+
+        return new File(getNewExcelWorkbookFilePath(fileName));
+
+    }
+
+    private String getNewExcelWorkbookFilePath(String fileName) throws IOException {
         String newXlsxFilePath = configurationAccess.getProperty("workingDirectory") + fileName + ".xlsx";
         FileOutputStream newXLSXfile = new FileOutputStream(newXlsxFilePath);
         workbookAccess.getInstance().write(newXLSXfile);
         newXLSXfile.close();
         workbookAccess.getInstance().close();
-
-        return new File(newXlsxFilePath);
-
+        return newXlsxFilePath;
     }
 
     private int getMaxColumnIndex(WriteableReportData writeableReportData) {
@@ -89,8 +114,8 @@ public class ExcelWorkbookFileFactory {
         return returnMe - 1;
     }
 
-    private void writeRecordLine(List<Pair<String, String>> cellList, int rowIndex, Sheet sheet) {
-        Row row = sheet.createRow(rowIndex);
+    private void writeRecordLine(List<Pair<String, String>> cellList, Sheet sheet) {
+        Row row = sheet.createRow(sheet.getPhysicalNumberOfRows());
         int cellIndex = 0;
         for (Pair<String, String> cellValue : cellList) {
             Cell cell = row.createCell(cellIndex++);
@@ -99,8 +124,9 @@ public class ExcelWorkbookFileFactory {
         }
     }
 
-    private void writeMergedLine(int mergeSize, List<Pair<String, String>> cellList, int rowIndex, Sheet sheet) {
-        Row row = sheet.createRow(rowIndex);
+    private void writeMergedLine(int mergeSize, List<Pair<String, String>> cellList, Sheet sheet) {
+        int nextRowIndex = sheet.getPhysicalNumberOfRows();
+        Row row = sheet.createRow(nextRowIndex);
         int cellIndex = 0;
         String mergedText = "";
         Cell cell = row.createCell(cellIndex++);
@@ -110,7 +136,7 @@ public class ExcelWorkbookFileFactory {
 
         cell.setCellValue(mergedText);
         cell.setCellStyle(cellStyleAccess.newCellStyle("string"));
-        sheet.addMergedRegion(new CellRangeAddress(rowIndex, rowIndex, 0, mergeSize));
+        sheet.addMergedRegion(new CellRangeAddress(nextRowIndex, nextRowIndex, 0, mergeSize));
     }
 
     private void setCellValue(Cell cell, Pair<String, String> cellValue) {
@@ -133,7 +159,6 @@ public class ExcelWorkbookFileFactory {
                 cell.setCellType(CellType.STRING);
         }
     }
-
 
     private void errorOnUnknownRecordType(List<Pair<String, String>> cellList) throws IOException {
         throw new IOException(".xlsx conversion failed, This record has unknown type:" + System.getProperty("line.separator")

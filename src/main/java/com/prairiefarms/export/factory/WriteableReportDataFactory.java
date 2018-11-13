@@ -35,6 +35,7 @@ class WriteableReportDataFactory {
         List<String> textLines = textLineList.getLines(fileName);
         for (String textLine : textLines) {
             if (!textLine.isEmpty()) {
+                textLine = fixDollarSigns(textLine);
                 boolean lineTypeWasDetermined = false;
                 Report report = reportFactory.getReport(fileName); //move outside loop?
                 for (ReportRow reportRow : report.getReportRows()) {
@@ -69,6 +70,17 @@ class WriteableReportDataFactory {
             }
         }
         return returnMe;
+    }
+
+    private String fixDollarSigns(String textLine) {
+        char doubleTittleLetterI = 239;
+        char upsideDownQuestionMark = 191;
+        char oneHalfFraction = 189;
+        String diamondQuestionMarkThatsSupposedToBeDollarSign = Character.toString(doubleTittleLetterI)
+                + Character.toString(upsideDownQuestionMark)
+                + Character.toString(oneHalfFraction);
+        textLine = textLine.replace(diamondQuestionMarkThatsSupposedToBeDollarSign, "$");
+        return textLine;
     }
 
     private boolean isDataTypeMatch(String textLine, ReportRow reportRow) {
