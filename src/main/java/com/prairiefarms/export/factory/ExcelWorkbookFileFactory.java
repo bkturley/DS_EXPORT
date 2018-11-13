@@ -23,6 +23,8 @@ public class ExcelWorkbookFileFactory {
     private CellStyleAccess cellStyleAccess;
     private WriteableReportDataFactory writeableReportDataFactory;
 
+    private int mergeSize;
+
     public ExcelWorkbookFileFactory(){
         this(new ConfigurationAccess(), new WorkbookAccess(), new CellStyleAccess(), new WriteableReportDataFactory());
     }
@@ -42,14 +44,14 @@ public class ExcelWorkbookFileFactory {
 
         Sheet sheet = workbookAccess.getInstance().createSheet("Report");
         WriteableReportData writeableLines = writeableReportDataFactory.newWriteableReportData(fileName);
-        int maxCellsPerRow = getMaxColumnIndex(writeableLines);
+        mergeSize = getMaxColumnIndex(writeableLines);
         boolean pastHeadline = false;
         for (WriteableLine writeableLine : writeableLines.getData()) {
             List<Pair<String, String>> cells = writeableLine.getCells();
             switch (writeableLine.getRecordType()) {
                 case "headline":
                     if(!pastHeadline){
-                        writeMergedLine(maxCellsPerRow, cells, sheet);
+                        writeMergedLine(cells, sheet);
                     }
                     break;
                 case "label":
@@ -63,7 +65,7 @@ public class ExcelWorkbookFileFactory {
                     break;
                 case "header":
                 case "footer":
-                    writeMergedLine(maxCellsPerRow, cells,  sheet);
+                    writeMergedLine(cells,  sheet);
                     break;
                 default:
                     errorOnUnknownRecordType(cells);
@@ -92,9 +94,17 @@ public class ExcelWorkbookFileFactory {
                 Integer groupNumber = Integer.parseInt(cells.get(1).getLeft().trim());
 
                 if(!groupTabs.containsKey(groupNumber)){
-                    groupTabs.put(groupNumber, workbookAccess.getInstance().createSheet("Group " + groupNumber.toString()));
-                    // todo: write the label line?
+                    String newSheetName = "Group " + groupNumber.toString();
+                    groupTabs.put(groupNumber, workbookAccess.getInstance().createSheet(newSheetName));
 
+                    // todo: write the label line
+                    for (WriteableLine writeableLineInner : writeableLines.getData()) {
+                        List<Pair<String, String>> cellsInner = writeableLineInner.getCells();
+                        if ("label".equals(writeableLineInner.getRecordType())) {
+                            writeRecordLine(cellsInner, groupTabs.get(groupNumber));
+                            break;
+                        }
+                    }
                 }
                 writeRecordLine(cells, groupTabs.get(groupNumber));
             }
@@ -136,7 +146,7 @@ public class ExcelWorkbookFileFactory {
         }
     }
 
-    private void writeMergedLine(int mergeSize, List<Pair<String, String>> cellList, Sheet sheet) {
+    private void writeMergedLine(List<Pair<String, String>> cellList, Sheet sheet) {
         int nextRowIndex = sheet.getPhysicalNumberOfRows();
         Row row = sheet.createRow(nextRowIndex);
         int cellIndex = 0;

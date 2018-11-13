@@ -7,7 +7,7 @@
     <groupId>com.prairieFarms</groupId>
     <artifactId>ds_export</artifactId>
     <packaging>jar</packaging>
-    <version>18.11.06</version>
+    <version>18.11.13</version>
 
     <name>ds_export</name>
     <url>http://www.prairiefarms.com</url>
