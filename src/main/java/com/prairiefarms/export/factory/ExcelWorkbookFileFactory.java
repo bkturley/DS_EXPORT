@@ -13,10 +13,7 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ExcelWorkbookFileFactory {
 
@@ -74,25 +71,40 @@ public class ExcelWorkbookFileFactory {
         }
 
         //if this gets out of hand, migrate to database lookups instead.
-        String reportName = fileName.split("\\.")[3];
-        if("P818TPRT".equals(reportName)) {
-            Map<Integer, Sheet> groupTabs = new HashMap<>();
-            for (WriteableLine writeableLine : writeableLines.getData()) {
-                List<Pair<String, String>> cells = writeableLine.getCells();
-                if ("detail".equals(writeableLine.getRecordType()) && StringUtils.isNotBlank(cells.get(1).getLeft())) {
-                    Integer groupNumber = Integer.parseInt(cells.get(1).getLeft().trim());
-                    if(!groupTabs.containsKey(groupNumber)){
-                        groupTabs.put(groupNumber, workbookAccess.getInstance().createSheet("Group " + groupNumber.toString()));
-                        // todo: write the label line?
-                        
-                    }
-                    writeRecordLine(cells, groupTabs.get(groupNumber));
-                }
-            }
+        boolean reportTypeIsP818TPRT = "P818TPRT".equals(fileName.split("\\.")[3]);
+        if(reportTypeIsP818TPRT) {
+            writeGroupTabs(writeableLines);
         }
 
         return new File(getNewExcelWorkbookFilePath(fileName));
 
+    }
+
+    private void writeGroupTabs(WriteableReportData writeableLines) {
+
+        Map<Integer, Sheet> groupTabs = new TreeMap<>();
+        for (WriteableLine writeableLine : writeableLines.getData()) {
+
+            List<Pair<String, String>> cells = writeableLine.getCells();
+
+            if ("detail".equals(writeableLine.getRecordType()) && StringUtils.isNotBlank(cells.get(1).getLeft())) {
+
+                Integer groupNumber = Integer.parseInt(cells.get(1).getLeft().trim());
+
+                if(!groupTabs.containsKey(groupNumber)){
+                    groupTabs.put(groupNumber, workbookAccess.getInstance().createSheet("Group " + groupNumber.toString()));
+                    // todo: write the label line?
+
+                }
+                writeRecordLine(cells, groupTabs.get(groupNumber));
+            }
+        }
+
+        // sort group tabs ascending order.
+        int tabIndex = 1;
+        for (Integer groupNumber : groupTabs.keySet()) {
+            workbookAccess.getInstance().setSheetOrder("Group " + groupNumber.toString(), tabIndex++);
+        }
     }
 
     private String getNewExcelWorkbookFilePath(String fileName) throws IOException {
